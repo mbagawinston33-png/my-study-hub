@@ -1,26 +1,244 @@
 @import "tailwindcss";
 
+/* =========
+   EDU BRIDGE+ THEME TOKENS
+   ========= */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand Colors */
+  --brand-h: 214;
+  --brand-s: 85%;
+  --brand-l: 48%;
+  --brand: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+  --brand-600: hsl(var(--brand-h) var(--brand-s) 42%);
+  --brand-700: hsl(var(--brand-h) 90% 36%);
+  --brand-100: hsl(var(--brand-h) 95% 96%);
+
+  /* Accent Colors */
+  --accent-h: 268;
+  --accent: hsl(var(--accent-h) 75% 56%);
+  --accent-100: hsl(var(--accent-h) 85% 96%);
+
+  /* State Colors */
+  --ok: hsl(152 64% 40%);
+  --warn: hsl(39 92% 52%);
+  --danger: hsl(356 84% 52%);
+  --muted: hsl(220 12% 45%);
+
+  /* Surface Colors */
+  --bg: hsl(0 0% 98%);
+  --card: hsl(0 0% 100%);
+  --text: hsl(220 10% 12%);
+  --text-2: hsl(220 8% 48%);
+  --border: hsl(220 12% 90%);
+  --ring: color-mix(in oklab, var(--brand), white 60%);
+
+  /* Design Tokens */
+  --radius: 14px;
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* Typography */
+  --fs-hero: clamp(28px, 4vw, 42px);
+  --fs-h1: clamp(22px, 3vw, 32px);
+  --fs-h2: clamp(18px, 2.2vw, 24px);
+  --fs-h3: clamp(16px, 2vw, 20px);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Base Styles */
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji",
+    sans-serif;
+  background:
+    radial-gradient(
+      800px 400px at 85% -5%,
+      var(--brand-100),
+      transparent 50%
+    ),
+    radial-gradient(
+      600px 300px at 15% 95%,
+      var(--accent-100),
+      transparent 50%
+    )
+    no-repeat var(--bg);
+  color: var(--text);
+}
+
+/* Tailwind Theme Integration */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-100: var(--brand-100);
+  --color-accent: var(--accent);
+  --color-accent-100: var(--accent-100);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-text-2: var(--text-2);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --border-radius-primary: var(--radius);
+  --shadow-primary-sm: var(--shadow-sm);
+  --shadow-primary-md: var(--shadow-md);
+  --shadow-primary-lg: var(--shadow-lg);
+}
+
+/* Component Base Classes */
+.btn {
+  --bg: var(--brand);
+  --fg: white;
+  --bd: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--bd);
+  background: var(--bg);
+  color: var(--fg);
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  filter: brightness(1.05);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn.ghost {
+  --bg: transparent;
+  --fg: var(--text);
+  --bd: var(--border);
+  background: linear-gradient(var(--card), var(--card)) padding-box,
+    linear-gradient(135deg, var(--border), var(--brand-100)) border-box;
+}
+
+.btn.subtle {
+  --bg: color-mix(in oklab, var(--brand), white 80%);
+  --fg: var(--brand-700);
+  --bd: transparent;
+}
+
+.btn.warn {
+  --bg: var(--warn);
+}
+
+.btn.ok {
+  --bg: var(--ok);
+}
+
+.btn.danger {
+  --bg: var(--danger);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.badge.brand {
+  background: var(--brand-100);
+  color: var(--brand-700);
+  border-color: color-mix(in srgb, var(--brand-100), var(--border));
+}
+
+.badge.ok {
+  background: color-mix(in srgb, var(--ok), white 84%);
+  color: var(--ok);
+}
+
+.badge.warn {
+  background: color-mix(in srgb, var(--warn), white 88%);
+  color: var(--warn);
+}
+
+.badge.danger {
+  background: color-mix(in srgb, var(--danger), white 88%);
+  color: var(--danger);
+}
+
+.container {
+  max-width: 1200px;
+  margin-inline: auto;
+  padding: 28px 20px 80px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.right {
+  margin-left: auto;
+}
+
+.hr {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+  border-radius: 1px;
+}
+
+.small {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* Logo Styles */
+.logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: conic-gradient(
+      from 210deg at 65% 30%,
+      var(--brand),
+      transparent 40%
+    ),
+    radial-gradient(18px 18px at 30% 70%, var(--accent), transparent 60%),
+    linear-gradient(135deg, var(--brand-700), var(--brand));
+  box-shadow: var(--shadow-sm),
+    inset 0 0 0 2px color-mix(in srgb, white, transparent 85%);
 }
