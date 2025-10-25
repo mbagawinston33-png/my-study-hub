@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { Subject } from "@/types/subject";
-import { Plus, BookOpen, Edit, Trash2, Users, Calendar, RefreshCw } from "lucide-react";
+import { Subject, SubjectWithFileCount } from "@/types/subject";
+import { Plus, BookOpen, Edit, Trash2, Users, Calendar, RefreshCw, FolderOpen } from "lucide-react";
+import SubjectFilesModal from "@/components/subject/SubjectFilesModal";
 
 // Fetch subjects from Firebase Firestore
 const getSubjectsFromFirebase = async (userId: string): Promise<Subject[]> => {
@@ -20,7 +21,7 @@ const getSubjectsFromFirebase = async (userId: string): Promise<Subject[]> => {
     );
 
     const querySnapshot = await getDocs(subjectsQuery);
-    const subjects: Subject[] = [];
+    const subjects: SubjectWithFileCount[] = [];
 
     querySnapshot.forEach((doc) => {
       const data = doc.data();
@@ -33,9 +34,11 @@ const getSubjectsFromFirebase = async (userId: string): Promise<Subject[]> => {
         color: data.color,
         teacher: data.teacher,
         room: data.room,
+        schedule: data.schedule,
         isActive: data.isActive,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
+        fileCount: data.fileCount || 0,
       });
     });
 
@@ -50,9 +53,13 @@ export default function SubjectsPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<SubjectWithFileCount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Modal state
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
 
   const refreshSubjects = async () => {
     if (!user?.userId) return;
@@ -115,6 +122,19 @@ export default function SubjectsPage() {
       console.error("Error deleting subject:", error);
       // TODO: Show error message to user
     }
+  };
+
+  // Modal handlers
+  const openFilesModal = (subject: Subject) => {
+    setSelectedSubject(subject);
+    setIsFilesModalOpen(true);
+  };
+
+  const closeFilesModal = () => {
+    setSelectedSubject(null);
+    setIsFilesModalOpen(false);
+    // Refresh subjects to update file count
+    refreshSubjects();
   };
 
   if (isLoading) {
@@ -313,6 +333,38 @@ export default function SubjectsPage() {
                     <Edit size={16} />
                   </button>
                   <button
+                    onClick={() => openFilesModal(subject)}
+                    className="btn ghost"
+                    style={{ padding: '8px', position: 'relative' }}
+                    title="Manage files"
+                  >
+                    <FolderOpen size={16} />
+                    {subject.fileCount && subject.fileCount > 0 && (
+                      <span
+                        className="badge"
+                        style={{
+                          position: 'absolute',
+                          top: '-4px',
+                          right: '-4px',
+                          fontSize: '10px',
+                          padding: '2px 4px',
+                          minWidth: '16px',
+                          height: '16px',
+                          background: 'var(--brand)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: '600'
+                        }}
+                      >
+                        {subject.fileCount > 99 ? '99+' : subject.fileCount}
+                      </span>
+                    )}
+                  </button>
+                  <button
                     onClick={() => handleDeleteSubject(subject.id)}
                     className="btn ghost"
                     style={{ padding: '8px' }}
@@ -325,6 +377,15 @@ export default function SubjectsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Files Modal */}
+      {selectedSubject && (
+        <SubjectFilesModal
+          subject={selectedSubject}
+          isOpen={isFilesModalOpen}
+          onClose={closeFilesModal}
+        />
       )}
 
       <style jsx>{`

@@ -88,3 +88,168 @@ export const TIME_SLOTS = [
   '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
   '20:00', '20:30', '21:00'
 ] as const;
+
+// ===== FILE MANAGEMENT TYPES =====
+
+export type FileType =
+  | 'pdf'
+  | 'doc' | 'docx'
+  | 'ppt' | 'pptx'
+  | 'xls' | 'xlsx'
+  | 'jpg' | 'jpeg' | 'png' | 'gif'
+  | 'txt' | 'md'
+  | 'zip' | 'rar'
+  | 'other';
+
+export interface SubjectFile {
+  id: string;
+  subjectId: string;
+  userId: string;
+  name: string;
+  originalName: string;
+  type: FileType;
+  size: number;
+  url: string;
+  storagePath: string;
+  description?: string;
+  isVerified: boolean;
+  uploadedAt: Timestamp;
+}
+
+export interface FileUploadState {
+  isUploading: boolean;
+  progress: number;
+  error?: string;
+  files: SubjectFile[];
+}
+
+export interface FileValidationRules {
+  maxSizeBytes: number;
+  allowedTypes: FileType[];
+  maxFilesPerSubject: number;
+}
+
+export interface FileValidationError {
+  file: File;
+  message: string;
+  type: 'size' | 'type' | 'count' | 'name' | 'general';
+}
+
+// File type configuration with MIME types and icons
+export const FILE_TYPE_CONFIG = {
+  // Documents
+  pdf: {
+    mime: ['application/pdf'],
+    icon: 'PDF',
+    color: '#DC2626',
+    category: 'document' as const
+  },
+  doc: {
+    mime: ['application/msword'],
+    icon: 'DOC',
+    color: '#2563EB',
+    category: 'document' as const
+  },
+  docx: {
+    mime: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    icon: 'DOCX',
+    color: '#2563EB',
+    category: 'document' as const
+  },
+  ppt: {
+    mime: ['application/vnd.ms-powerpoint'],
+    icon: 'PPT',
+    color: '#EA580C',
+    category: 'document' as const
+  },
+  pptx: {
+    mime: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+    icon: 'PPTX',
+    color: '#EA580C',
+    category: 'document' as const
+  },
+  xls: {
+    mime: ['application/vnd.ms-excel'],
+    icon: 'XLS',
+    color: '#16A34A',
+    category: 'document' as const
+  },
+  xlsx: {
+    mime: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+    icon: 'XLSX',
+    color: '#16A34A',
+    category: 'document' as const
+  },
+
+  // Images
+  jpg: {
+    mime: ['image/jpeg'],
+    icon: 'JPG',
+    color: '#9333EA',
+    category: 'image' as const
+  },
+  jpeg: {
+    mime: ['image/jpeg'],
+    icon: 'JPG',
+    color: '#9333EA',
+    category: 'image' as const
+  },
+  png: {
+    mime: ['image/png'],
+    icon: 'PNG',
+    color: '#9333EA',
+    category: 'image' as const
+  },
+  gif: {
+    mime: ['image/gif'],
+    icon: 'GIF',
+    color: '#9333EA',
+    category: 'image' as const
+  },
+
+  // Text
+  txt: {
+    mime: ['text/plain'],
+    icon: 'TXT',
+    color: '#6B7280',
+    category: 'text' as const
+  },
+  md: {
+    mime: ['text/markdown'],
+    icon: 'MD',
+    color: '#6B7280',
+    category: 'text' as const
+  },
+
+  // Archives
+  zip: {
+    mime: ['application/zip', 'application/x-zip-compressed'],
+    icon: 'ZIP',
+    color: '#A855F7',
+    category: 'archive' as const
+  },
+  rar: {
+    mime: ['application/x-rar-compressed'],
+    icon: 'RAR',
+    color: '#A855F7',
+    category: 'archive' as const
+  },
+  other: {
+    mime: [],
+    icon: 'FILE',
+    color: '#6B7280',
+    category: 'other' as const
+  }
+} as const;
+
+// Default validation rules
+export const DEFAULT_FILE_VALIDATION_RULES: FileValidationRules = {
+  maxSizeBytes: 10 * 1024 * 1024, // 10MB
+  allowedTypes: Object.keys(FILE_TYPE_CONFIG) as FileType[],
+  maxFilesPerSubject: 50
+};
+
+// Update Subject interface to include file count
+export interface SubjectWithFileCount extends Subject {
+  fileCount?: number;
+}
