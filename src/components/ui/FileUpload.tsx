@@ -43,8 +43,8 @@ export default function FileUpload({
       acceptList.push(extension);
 
       // Add MIME types from FILE_TYPE_CONFIG
-      if (FILE_TYPE_CONFIG[type] && FILE_TYPE_CONFIG[type].mime) {
-        FILE_TYPE_CONFIG[type].mime.forEach((mimeType: string) => {
+      if (type in FILE_TYPE_CONFIG && FILE_TYPE_CONFIG[type as keyof typeof FILE_TYPE_CONFIG].mime) {
+        FILE_TYPE_CONFIG[type as keyof typeof FILE_TYPE_CONFIG].mime.forEach((mimeType: string) => {
           acceptList.push(mimeType);
         });
       }

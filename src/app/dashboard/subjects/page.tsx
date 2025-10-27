@@ -184,7 +184,7 @@ export default function SubjectsPage() {
           <button
             onClick={() => router.push("/dashboard/subjects/new")}
             className="btn"
-            style={{ minWidth: '140px' }}
+            style={{ minWidth: '140px', background: '#22c55e', borderColor: '#22c55e' }}
           >
             <Plus size={16} style={{ marginRight: '8px' }} />
             Add Subject
@@ -258,6 +258,7 @@ export default function SubjectsPage() {
             <button
               onClick={() => router.push("/dashboard/subjects/new")}
               className="btn"
+              style={{ background: '#22c55e', borderColor: '#22c55e' }}
             >
               <Plus size={16} style={{ marginRight: '8px' }} />
               Add Your First Subject

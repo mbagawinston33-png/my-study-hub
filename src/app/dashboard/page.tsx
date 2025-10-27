@@ -1,12 +1,19 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import ReminderModal from "@/components/reminder/ReminderModal";
+import ReminderCard from "@/components/reminder/ReminderCard";
+import { Reminder } from "@/types/reminder";
+import { getUpcomingReminders } from "@/lib/reminders";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [isLoadingReminders, setIsLoadingReminders] = useState(true);
 
   const handleSignOut = async () => {
     try {
@@ -15,6 +22,34 @@ export default function DashboardPage() {
     } catch (error) {
       console.error("Error signing out:", error);
     }
+  };
+
+  useEffect(() => {
+    loadUpcomingReminders();
+  }, [user]);
+
+  const loadUpcomingReminders = async () => {
+    if (!user) return;
+
+    setIsLoadingReminders(true);
+    try {
+      const reminders = await getUpcomingReminders(user.userId);
+      setUpcomingReminders(reminders.slice(0, 3)); // Show only 3 upcoming reminders
+    } catch (error) {
+      console.error("Error loading upcoming reminders:", error);
+    } finally {
+      setIsLoadingReminders(false);
+    }
+  };
+
+  const handleReminderUpdate = (updatedReminder: Reminder) => {
+    setUpcomingReminders(prev =>
+      prev.map(r => r.id === updatedReminder.id ? updatedReminder : r)
+    );
+  };
+
+  const handleReminderDelete = (reminderId: string) => {
+    setUpcomingReminders(prev => prev.filter(r => r.id !== reminderId));
   };
 
   return (
@@ -79,18 +114,22 @@ export default function DashboardPage() {
               <span className="badge ok">Done</span>
             </div>
 
-            <div className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-              <div className="row" style={{ flex: 1, gap: '12px' }}>
-                <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--warn)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
-                  R
+            {upcomingReminders.length > 0 && (
+              <div className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="row" style={{ flex: 1, gap: '12px' }}>
+                  <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--warn)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
+                    R
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <b style={{ color: 'var(--text)' }}>Latest Reminder</b>
+                    <div className="small">{upcomingReminders[0].title} • Due {upcomingReminders[0].dueDate.toDate().toLocaleDateString()}</div>
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <b style={{ color: 'var(--text)' }}>Reminder Set</b>
-                  <div className="small">Physics Lab Report • Due tomorrow</div>
-                </div>
+                <span className="badge warn">
+                  {upcomingReminders[0].priority}
+                </span>
               </div>
-              <span className="badge warn">Pending</span>
-            </div>
+            )}
 
             <div className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
               <div className="row" style={{ flex: 1, gap: '12px' }}>
@@ -119,9 +158,13 @@ export default function DashboardPage() {
             <a href="/dashboard/subjects/new" className="btn subtle" style={{ justifyContent: 'center' }}>
               Add Subject
             </a>
-            <a href="/dashboard/reminders/new" className="btn ghost" style={{ justifyContent: 'center' }}>
+            <button
+              onClick={() => setIsReminderModalOpen(true)}
+              className="btn ghost"
+              style={{ justifyContent: 'center' }}
+            >
               Set Reminder
-            </a>
+            </button>
           </div>
 
           <div className="hr" style={{ margin: '20px 0' }}></div>
@@ -133,37 +176,52 @@ export default function DashboardPage() {
           <div className="small">18 of 25 tasks completed</div>
         </div>
 
-        {/* Upcoming Tasks */}
+        {/* Upcoming Reminders */}
         <div className="card" style={{ gridColumn: 'span 6' }}>
           <div className="row">
-            <h3 style={{ fontSize: 'var(--fs-h2)', margin: '0 0 14px', color: 'var(--text)' }}>Upcoming Tasks</h3>
-            <span className="right badge brand">This Week</span>
+            <h3 style={{ fontSize: 'var(--fs-h2)', margin: '0 0 14px', color: 'var(--text)' }}>Upcoming Reminders</h3>
+            <span className="right badge brand">
+              {upcomingReminders.length > 0 ? `${upcomingReminders.length} Active` : 'None'}
+            </span>
           </div>
           <div className="hr"></div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div className="row" style={{ gap: '10px' }}>
-              <span className="badge warn">High</span>
-              <div style={{ flex: 1 }}>
-                <b style={{ color: 'var(--text)' }}>Physics Lab Report</b>
-                <div className="small">Due tomorrow • 2:00 PM</div>
-              </div>
+          {isLoadingReminders ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-2)' }}>
+              Loading reminders...
             </div>
-            <div className="row" style={{ gap: '10px' }}>
-              <span className="badge ok">Medium</span>
-              <div style={{ flex: 1 }}>
-                <b style={{ color: 'var(--text)' }}>Math Problem Set #6</b>
-                <div className="small">Due Friday • 11:59 PM</div>
-              </div>
+          ) : upcomingReminders.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {upcomingReminders.slice(0, 3).map((reminder) => (
+                <div key={reminder.id} className="row" style={{ gap: '10px' }}>
+                  <span className={`badge ${
+                    reminder.priority === 'high' ? 'warn' :
+                    reminder.priority === 'medium' ? 'ok' : ''
+                  }`}>
+                    {reminder.priority}
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <b style={{ color: 'var(--text)' }}>{reminder.title}</b>
+                    <div className="small">
+                      Due {reminder.dueDate.toDate().toLocaleDateString()} • {reminder.dueDate.toDate().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="row" style={{ gap: '10px' }}>
-              <span className="badge">Low</span>
-              <div style={{ flex: 1 }}>
-                <b style={{ color: 'var(--text)' }}>Read Chapter 8</b>
-                <div className="small">Due Sunday • No specific time</div>
-              </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-2)' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px', opacity: 0.3 }}>📅</div>
+              <div style={{ fontSize: '14px' }}>No upcoming reminders</div>
+              <button
+                onClick={() => setIsReminderModalOpen(true)}
+                className="btn ghost"
+                style={{ fontSize: '12px', marginTop: '8px' }}
+              >
+                Create your first reminder
+              </button>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Subject Overview */}
@@ -194,6 +252,13 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Reminder Modal */}
+      <ReminderModal
+        isOpen={isReminderModalOpen}
+        onClose={() => setIsReminderModalOpen(false)}
+        onSuccess={loadUpcomingReminders}
+      />
     </div>
   );
 }
