@@ -116,8 +116,7 @@ export default function SubjectsPage() {
       // Update UI
       setSubjects(prev => prev.filter(subject => subject.id !== subjectId));
 
-      console.log("Subject deleted from Firebase:", subjectId);
-
+      
     } catch (error) {
       console.error("Error deleting subject:", error);
       // TODO: Show error message to user

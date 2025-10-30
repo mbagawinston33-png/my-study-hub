@@ -34,13 +34,11 @@ function initializeFirebase() {
   if (!app) {
     try {
       app = initializeApp(firebaseConfig);
-      console.log('Firebase initialized successfully');
-    } catch (error: unknown) {
+          } catch (error: unknown) {
       if ((error as { code?: string })?.code === 'app/duplicate-app') {
         // If app already exists (can happen in hot reload), get existing instance
         app = initializeApp(firebaseConfig, 'my-study-hub-standalone');
-        console.log('Firebase standalone instance created');
-      } else {
+              } else {
         console.error('Firebase initialization error:', error);
         throw error;
       }
@@ -58,8 +56,7 @@ function initializeFirebase() {
       experimentalForceLongPolling: true, // Force long polling instead of WebChannel
     });
 
-    console.log('Firestore initialized with serverless optimizations');
-  }
+      }
 
   if (!storage) {
     storage = getStorage(app);

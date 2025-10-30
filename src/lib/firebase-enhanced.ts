@@ -33,12 +33,10 @@ function initializeFirebaseEnhanced() {
   if (!app) {
     try {
       app = initializeApp(firebaseConfig);
-      console.log('Firebase initialized successfully with enhanced settings');
-    } catch (error: unknown) {
+          } catch (error: unknown) {
       if ((error as { code?: string })?.code === 'app/duplicate-app') {
         app = initializeApp(firebaseConfig, 'my-study-hub-enhanced');
-        console.log('Firebase enhanced standalone instance created');
-      } else {
+              } else {
         console.error('Firebase initialization error:', error);
         throw error;
       }
@@ -50,8 +48,7 @@ function initializeFirebaseEnhanced() {
     // Set auth persistence to NONE for serverless
     import('firebase/auth').then(({ setPersistence, browserLocalPersistence }) => {
       setPersistence(auth!, browserLocalPersistence).catch(() => {
-        console.log('Auth persistence disabled for serverless environment');
-      });
+              });
     });
   }
 
@@ -63,8 +60,7 @@ function initializeFirebaseEnhanced() {
       experimentalAutoDetectLongPolling: true, // Auto-detect best transport
     });
 
-    console.log('Firestore initialized with enhanced serverless settings');
-  }
+      }
 
   if (!storage) {
     storage = getStorage(app);

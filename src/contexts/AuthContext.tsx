@@ -57,11 +57,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
             });
           } else {
             // User exists in Firebase Auth but not in Firestore
+            // Create a basic user profile from Firebase Auth data
+            const basicProfile: User = {
+              userId: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              displayName: firebaseUser.displayName || firebaseUser.email || 'User',
+              role: 'student', // Default role
+              accountStatus: 'active',
+              photoURL: firebaseUser.photoURL || undefined
+            };
+
             setAuthState({
-              user: null,
+              user: basicProfile,
               loading: false,
-              error: 'User profile not found. Please contact admin.'
+              error: null
             });
+
+            // Optionally: Save this basic profile to Firestore
+            // This would require implementing a createProfile function
           }
         } catch (error) {
           console.error('Error fetching user profile:', error);

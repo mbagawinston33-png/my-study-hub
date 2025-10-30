@@ -10,6 +10,7 @@ import {
   FileValidationError,
   SubjectFile
 } from '@/types/subject';
+import { TaskFile } from '@/types/task';
 import { Timestamp } from 'firebase/firestore';
 
 /**
@@ -289,4 +290,51 @@ export function filterFiles(
 
     return matchesSearch && matchesType;
   });
+}
+
+/**
+ * Creates file metadata for task files
+ */
+export function createTaskFileData(
+  taskId: string,
+  userId: string,
+  originalName: string,
+  safeName: string,
+  size: number,
+  url: string,
+  storagePath: string,
+  description?: string
+): Omit<TaskFile, 'id'> {
+  return {
+    taskId,
+    userId,
+    name: safeName,
+    originalName,
+    type: getFileExtension(originalName) as FileType,
+    size,
+    url,
+    storagePath,
+    description: description || '',
+    uploadedAt: Timestamp.now()
+  };
+}
+
+/**
+ * Gets storage path for task files
+ */
+export function getTaskStoragePath(userId: string, taskId: string, filename: string): string {
+  return `tasks/${userId}/${taskId}/${filename}`;
+}
+
+/**
+ * Generates a safe filename for task files
+ */
+export function generateTaskSafeFilename(originalName: string): string {
+  const timestamp = Date.now();
+  const extension = getFileExtension(originalName);
+  const baseName = originalName.replace(`.${extension}`, '')
+    .replace(/[^a-zA-Z0-9-_]/g, '_')
+    .substring(0, 50); // Limit length
+
+  return `${timestamp}_${baseName}.${extension}`;
 }

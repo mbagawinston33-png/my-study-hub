@@ -141,8 +141,7 @@ export async function deleteFile(fileId: string, subjectId: string): Promise<voi
     // Update subject file count
     await updateSubjectFileCount(subjectId);
 
-    console.log('File deleted successfully:', fileId);
-
+    
   } catch (error) {
     console.error('Error deleting file:', error);
     throw error;
@@ -207,8 +206,7 @@ export async function updateFileMetadata(
       updatedAt: serverTimestamp()
     });
 
-    console.log('File metadata updated:', fileId);
-
+    
   } catch (error) {
     console.error('Error updating file metadata:', error);
     throw error;
@@ -357,8 +355,7 @@ export async function deleteAllSubjectFiles(subjectId: string): Promise<void> {
 
     await Promise.all(deletePromises);
 
-    console.log(`Deleted all files for subject: ${subjectId}`);
-
+    
   } catch (error) {
     console.error('Error deleting subject files:', error);
     throw error;

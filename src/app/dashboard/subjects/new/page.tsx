@@ -84,8 +84,7 @@ export default function NewSubjectPage() {
       const subjectRef = doc(db, 'subjects', Date.now().toString());
       await setDoc(subjectRef, newSubject);
 
-      console.log("Subject created in Firebase:", newSubject);
-
+      
       // Simulate API delay for better UX
       await new Promise(resolve => setTimeout(resolve, 1000));
 

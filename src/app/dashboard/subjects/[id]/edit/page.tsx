@@ -163,8 +163,7 @@ export default function EditSubjectPage() {
       const subjectRef = doc(db, 'subjects', subjectId);
       await updateDoc(subjectRef, updatedData);
 
-      console.log("Subject updated in Firebase:", { subjectId, ...updatedData });
-
+      
       // Simulate API delay for better UX
       await new Promise(resolve => setTimeout(resolve, 1000));
 
