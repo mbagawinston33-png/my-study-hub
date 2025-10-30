@@ -56,8 +56,7 @@ export async function createTask(userId: string, taskData: TaskFormData): Promis
       ...newDoc.data()
     } as Task;
   } catch (error) {
-    console.error('Error creating task:', error);
-    throw new Error('Failed to create task');
+throw new Error('Failed to create task');
   }
 }
 
@@ -80,8 +79,7 @@ export async function getUserTasks(userId: string): Promise<Task[]> {
       ...doc.data()
     })) as Task[];
   } catch (error) {
-    console.error('Error fetching tasks:', error);
-    throw new Error('Failed to fetch tasks');
+throw new Error('Failed to fetch tasks');
   }
 }
 
@@ -105,8 +103,7 @@ export async function getTasksByStatus(userId: string, status: TaskStatus): Prom
       ...doc.data()
     })) as Task[];
   } catch (error) {
-    console.error('Error fetching tasks by status:', error);
-    throw new Error('Failed to fetch tasks by status');
+throw new Error('Failed to fetch tasks by status');
   }
 }
 
@@ -130,8 +127,7 @@ export async function getTasksBySubject(userId: string, subjectId: string): Prom
       ...doc.data()
     })) as Task[];
   } catch (error) {
-    console.error('Error fetching tasks by subject:', error);
-    throw new Error('Failed to fetch tasks by subject');
+throw new Error('Failed to fetch tasks by subject');
   }
 }
 
@@ -158,8 +154,7 @@ export async function getUpcomingTasks(userId: string, limitCount: number = 10):
       ...doc.data()
     })) as Task[];
   } catch (error) {
-    console.error('Error fetching upcoming tasks:', error);
-    throw new Error('Failed to fetch upcoming tasks');
+throw new Error('Failed to fetch upcoming tasks');
   }
 }
 
@@ -193,8 +188,7 @@ export async function getOverdueTasks(userId: string): Promise<Task[]> {
 
     return tasks;
   } catch (error) {
-    console.error('Error fetching overdue tasks:', error);
-    throw new Error('Failed to fetch overdue tasks');
+throw new Error('Failed to fetch overdue tasks');
   }
 }
 
@@ -221,8 +215,7 @@ export async function getTaskById(userId: string, taskId: string): Promise<Task>
 
     return task;
   } catch (error) {
-    console.error('Error fetching task:', error);
-    throw error instanceof Error ? error : new Error('Failed to fetch task');
+throw error instanceof Error ? error : new Error('Failed to fetch task');
   }
 }
 
@@ -277,8 +270,7 @@ export async function updateTask(userId: string, taskId: string, taskData: Parti
       ...updatedDoc.data()
     } as Task;
   } catch (error) {
-    console.error('Error updating task:', error);
-    throw error instanceof Error ? error : new Error('Failed to update task');
+throw error instanceof Error ? error : new Error('Failed to update task');
   }
 }
 
@@ -314,8 +306,7 @@ export async function updateTaskStatus(userId: string, taskId: string, status: T
       ...updatedDoc.data()
     } as Task;
   } catch (error) {
-    console.error('Error updating task status:', error);
-    throw error instanceof Error ? error : new Error('Failed to update task status');
+throw error instanceof Error ? error : new Error('Failed to update task status');
   }
 }
 
@@ -352,8 +343,7 @@ export async function toggleTaskCompletion(userId: string, taskId: string): Prom
       ...updatedDoc.data()
     } as Task;
   } catch (error) {
-    console.error('Error toggling task completion:', error);
-    throw error instanceof Error ? error : new Error('Failed to update task');
+throw error instanceof Error ? error : new Error('Failed to update task');
   }
 }
 
@@ -379,8 +369,7 @@ export async function deleteTask(userId: string, taskId: string): Promise<void> 
 
     await deleteDoc(docRef);
   } catch (error) {
-    console.error('Error deleting task:', error);
-    throw error instanceof Error ? error : new Error('Failed to delete task');
+throw error instanceof Error ? error : new Error('Failed to delete task');
   }
 }
 
@@ -399,8 +388,7 @@ export async function getTasksWithSubjects(userId: string): Promise<TaskWithSubj
       subject: task.subjectId ? subjects.find(s => s.id === task.subjectId) : undefined
     }));
   } catch (error) {
-    console.error('Error fetching tasks with subjects:', error);
-    throw new Error('Failed to fetch tasks with subjects');
+throw new Error('Failed to fetch tasks with subjects');
   }
 }
 
@@ -441,8 +429,7 @@ export async function getTaskStats(userId: string): Promise<TaskStats> {
 
     return stats;
   } catch (error) {
-    console.error('Error getting task stats:', error);
-    throw new Error('Failed to get task statistics');
+throw new Error('Failed to get task statistics');
   }
 }
 
@@ -454,8 +441,7 @@ export async function updateOverdueTasks(userId: string): Promise<number> {
     const overdueTasks = await getOverdueTasks(userId);
     return overdueTasks.length;
   } catch (error) {
-    console.error('Error updating overdue tasks:', error);
-    throw new Error('Failed to update overdue tasks');
+throw new Error('Failed to update overdue tasks');
   }
 }
 
@@ -480,7 +466,6 @@ export async function getTasksByFilter(userId: string, filter: TaskFilter): Prom
         return await getUserTasks(userId);
     }
   } catch (error) {
-    console.error('Error fetching tasks by filter:', error);
-    throw new Error('Failed to fetch tasks by filter');
+throw new Error('Failed to fetch tasks by filter');
   }
 }

@@ -92,8 +92,7 @@ export default function NewSubjectPage() {
       router.push("/dashboard/subjects");
 
     } catch (error) {
-      console.error("Error creating subject:", error);
-      setErrors({ submit: "Failed to create subject. Please try again." });
+setErrors({ submit: "Failed to create subject. Please try again." });
     } finally {
       setIsSubmitting(false);
     }

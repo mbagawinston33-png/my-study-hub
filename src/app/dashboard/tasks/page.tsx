@@ -98,8 +98,7 @@ export default function TasksPage() {
       setSubjects(userSubjects);
       setStats(taskStats);
     } catch (error) {
-      console.error("Error loading tasks:", error);
-    } finally {
+} finally {
       setIsLoading(false);
     }
   };
@@ -143,8 +142,7 @@ export default function TasksPage() {
       const newStats = await getTaskStats(user.userId);
       setStats(newStats);
     } catch (error) {
-      console.error("Error toggling task completion:", error);
-    }
+}
   };
 
   // Handle task deletion
@@ -159,8 +157,7 @@ export default function TasksPage() {
       const newStats = await getTaskStats(user.userId);
       setStats(newStats);
     } catch (error) {
-      console.error("Error deleting task:", error);
-    }
+}
   };
 
   // Handle manual refresh

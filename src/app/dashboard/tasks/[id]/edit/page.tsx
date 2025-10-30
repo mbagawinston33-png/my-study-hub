@@ -38,8 +38,7 @@ export default function EditTaskPage() {
         setTask(taskData);
         setSubjects(userSubjects);
       } catch (error: any) {
-        console.error("Error loading data:", error);
-        if (error.message === 'Task not found' || error.message === 'Access denied') {
+if (error.message === 'Task not found' || error.message === 'Access denied') {
           setNotFound(true);
         } else {
           setError('Failed to load task. Please try again.');

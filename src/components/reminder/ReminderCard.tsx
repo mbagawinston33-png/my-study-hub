@@ -32,8 +32,7 @@ export default function ReminderCard({
       const updatedReminder = await toggleReminderCompletion(user.userId, reminder.id);
       onUpdate?.(updatedReminder);
     } catch (error) {
-      console.error('Error toggling reminder:', error);
-    } finally {
+} finally {
       setIsLoading(false);
     }
   };
@@ -50,8 +49,7 @@ export default function ReminderCard({
       await deleteReminder(user.userId, reminder.id);
       onDelete?.(reminder.id);
     } catch (error) {
-      console.error('Error deleting reminder:', error);
-    } finally {
+} finally {
       setIsLoading(false);
     }
   };

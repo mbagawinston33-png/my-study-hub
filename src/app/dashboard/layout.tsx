@@ -1,25 +1,13 @@
 "use client";
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import Navigation from "@/components/navigation/Navigation";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { logout } = useAuth();
-  const router = useRouter();
-
-  const handleSignOut = async () => {
-    try {
-      await logout();
-      router.push("/login");
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
 
   return (
     <ProtectedRoute>
@@ -37,26 +25,7 @@ export default function DashboardLayout({
               </div>
 
               {/* Navigation */}
-              <nav className="row" style={{ gap: '8px', flexWrap: 'wrap' }}>
-                <a href="/dashboard" className="btn subtle">
-                  Dashboard
-                </a>
-                <a href="/dashboard/tasks" className="btn ghost">
-                  Tasks
-                </a>
-                <a href="/dashboard/subjects" className="btn ghost">
-                  Subjects
-                </a>
-                <a href="/dashboard/reminders" className="btn ghost">
-                  Reminders
-                </a>
-                <a href="/dashboard/profile" className="btn ghost">
-                  Profile
-                </a>
-                <button onClick={handleSignOut} className="btn ghost" style={{ color: 'var(--danger)', borderColor: 'color-mix(in srgb, var(--danger), var(--border))' }}>
-                  Sign Out
-                </button>
-              </nav>
+              <Navigation />
             </div>
           </div>
         </header>

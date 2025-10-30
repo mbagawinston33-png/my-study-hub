@@ -24,8 +24,7 @@ export async function testFirebaseConnection() {
     return { success: true, message: 'Firebase connection successful' };
 
   } catch (error) {
-    console.error('Firebase connection test failed:', error);
-    return {
+return {
       success: false,
       message: 'Firebase connection failed',
       error: error instanceof Error ? error.message : String(error)
@@ -41,7 +40,6 @@ export function quickFirebaseTest() {
     const app = getApp();
         return true;
   } catch (error) {
-    console.error('Firebase Quick Test failed:', error);
-    return false;
+return false;
   }
 }

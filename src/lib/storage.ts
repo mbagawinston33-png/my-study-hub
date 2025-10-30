@@ -110,8 +110,7 @@ export async function uploadFile(
     return completeFileData;
 
   } catch (error) {
-    console.error('Error uploading file:', error);
-    throw error;
+throw error;
   }
 }
 
@@ -143,8 +142,7 @@ export async function deleteFile(fileId: string, subjectId: string): Promise<voi
 
     
   } catch (error) {
-    console.error('Error deleting file:', error);
-    throw error;
+throw error;
   }
 }
 
@@ -185,8 +183,7 @@ export async function getSubjectFiles(subjectId: string): Promise<SubjectFile[]>
     return files;
 
   } catch (error) {
-    console.error('Error getting subject files:', error);
-    return [];
+return [];
   }
 }
 
@@ -208,8 +205,7 @@ export async function updateFileMetadata(
 
     
   } catch (error) {
-    console.error('Error updating file metadata:', error);
-    throw error;
+throw error;
   }
 }
 
@@ -237,8 +233,7 @@ async function updateSubjectFileCount(subjectId: string): Promise<void> {
     });
 
   } catch (error) {
-    console.error('Error updating subject file count:', error);
-    // Don't throw error here as it's not critical
+// Don't throw error here as it's not critical
   }
 }
 
@@ -253,8 +248,7 @@ export async function getFileMetadata(storagePath: string) {
     const metadata = await getMetadata(storageRef);
     return metadata;
   } catch (error) {
-    console.error('Error getting file metadata:', error);
-    throw error;
+throw error;
   }
 }
 
@@ -287,8 +281,7 @@ export async function refreshFileURL(fileId: string): Promise<string> {
     return newURL;
 
   } catch (error) {
-    console.error('Error refreshing file URL:', error);
-    throw error;
+throw error;
   }
 }
 
@@ -316,8 +309,7 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
     return totalSize;
 
   } catch (error) {
-    console.error('Error getting user storage usage:', error);
-    return 0;
+return 0;
   }
 }
 
@@ -346,8 +338,7 @@ export async function deleteAllSubjectFiles(subjectId: string): Promise<void> {
         const storageRef = ref(storage, fileData.storagePath);
         await deleteObject(storageRef);
       } catch (error) {
-        console.warn(`Failed to delete file from storage: ${fileData.storagePath}`, error);
-      }
+}
 
       // Delete from Firestore
       return deleteDoc(docSnapshot.ref);
@@ -357,8 +348,7 @@ export async function deleteAllSubjectFiles(subjectId: string): Promise<void> {
 
     
   } catch (error) {
-    console.error('Error deleting subject files:', error);
-    throw error;
+throw error;
   }
 }
 
@@ -378,8 +368,7 @@ export async function verifyFileAccess(fileId: string, userId: string): Promise<
     return fileData.userId === userId;
 
   } catch (error) {
-    console.error('Error verifying file access:', error);
-    return false;
+return false;
   }
 }
 
@@ -403,7 +392,6 @@ export async function getUserSubjects(userId: string): Promise<Subject[]> {
       ...doc.data()
     })) as Subject[];
   } catch (error) {
-    console.error('Error fetching user subjects:', error);
-    return [];
+return [];
   }
 }

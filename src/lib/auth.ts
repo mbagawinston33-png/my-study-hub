@@ -7,6 +7,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   User as FirebaseUser,
   UserCredential
 } from 'firebase/auth';
@@ -102,9 +105,7 @@ export async function registerUser(formData: RegistrationFormData): Promise<Regi
     };
 
   } catch (error: unknown) {
-    console.error('Registration error:', error);
-
-    // Special handling for permission errors
+// Special handling for permission errors
     if ((error as any).message?.includes('Missing or insufficient permissions')) {
       return {
         success: false,
@@ -173,8 +174,7 @@ export async function loginUser(formData: LoginFormData): Promise<LoginResponse>
         });
       }
     } catch (firestoreError) {
-      console.warn('Firestore access failed, using basic auth user:', firestoreError);
-      // Continue with basic user object
+// Continue with basic user object
     }
 
     return {
@@ -183,9 +183,7 @@ export async function loginUser(formData: LoginFormData): Promise<LoginResponse>
     };
 
   } catch (error: unknown) {
-    console.error('Login error:', error);
-
-    return {
+return {
       success: false,
       error: mapFirebaseError(error)
     };
@@ -199,8 +197,7 @@ export async function logoutUser(): Promise<void> {
   try {
     await signOut(getAuthInstance());
   } catch (error) {
-    console.error('Logout error:', error);
-    throw error;
+throw error;
   }
 }
 
@@ -237,8 +234,7 @@ export async function getUserProfile(uid: string): Promise<User | null> {
     };
 
   } catch (error) {
-    console.error('Error getting user profile:', error);
-    return null;
+return null;
   }
 }
 
@@ -273,8 +269,104 @@ export async function updateUserProfile(uid: string, updates: Partial<UserProfil
     });
     return true;
   } catch (error) {
-    console.error('Error updating user profile:', error);
-    return false;
+return false;
+  }
+}
+
+/**
+ * Change user password
+ */
+export async function changeUserPassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<{ success: boolean; error?: AuthError }> {
+  try {
+    const auth = getAuthInstance();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser || !currentUser.email) {
+      return {
+        success: false,
+        error: {
+          code: 'no-user',
+          message: 'No authenticated user found. Please log in again.'
+        }
+      };
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 6) {
+      return {
+        success: false,
+        error: {
+          code: 'weak-password',
+          message: 'New password must be at least 6 characters long.'
+        }
+      };
+    }
+
+    // Reauthenticate user first (required for security-sensitive operations)
+    const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+    await reauthenticateWithCredential(currentUser, credential);
+
+    // Update password
+    await updatePassword(currentUser, newPassword);
+
+    return { success: true };
+
+  } catch (error: unknown) {
+    const errorCode = (error as { code?: string }).code || 'unknown-error';
+
+    // Handle specific error cases
+    switch (errorCode) {
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+        return {
+          success: false,
+          error: {
+            code: 'invalid-current-password',
+            message: 'Current password is incorrect. Please try again.',
+            field: 'currentPassword'
+          }
+        };
+
+      case 'auth/weak-password':
+        return {
+          success: false,
+          error: {
+            code: 'weak-password',
+            message: 'New password is too weak. Please choose a stronger password.',
+            field: 'newPassword'
+          }
+        };
+
+      case 'auth/too-many-requests':
+        return {
+          success: false,
+          error: {
+            code: 'too-many-requests',
+            message: 'Too many failed attempts. Please try again later.'
+          }
+        };
+
+      case 'auth/requires-recent-login':
+        return {
+          success: false,
+          error: {
+            code: 'requires-recent-login',
+            message: 'Please log in again before changing your password.'
+          }
+        };
+
+      default:
+        return {
+          success: false,
+          error: {
+            code: errorCode,
+            message: (error as { message?: string }).message || 'Failed to change password. Please try again.'
+          }
+        };
+    }
   }
 }
 

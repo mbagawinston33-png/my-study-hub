@@ -29,8 +29,7 @@ export default function NewTaskPage() {
         const userSubjects = await getUserSubjects(user.userId);
         setSubjects(userSubjects);
       } catch (error) {
-        console.error("Error loading subjects:", error);
-      } finally {
+} finally {
         setIsPageLoading(false);
       }
     };

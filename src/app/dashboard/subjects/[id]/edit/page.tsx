@@ -86,8 +86,7 @@ export default function EditSubjectPage() {
           setSubjectNotFound(true);
         }
       } catch (error) {
-        console.error("Error loading subject:", error);
-        setSubjectNotFound(true);
+setSubjectNotFound(true);
       } finally {
         setIsLoading(false);
       }
@@ -171,8 +170,7 @@ export default function EditSubjectPage() {
       router.push("/dashboard/subjects");
 
     } catch (error) {
-      console.error("Error updating subject:", error);
-      setErrors({ submit: "Failed to update subject. Please try again." });
+setErrors({ submit: "Failed to update subject. Please try again." });
     } finally {
       setIsSubmitting(false);
     }

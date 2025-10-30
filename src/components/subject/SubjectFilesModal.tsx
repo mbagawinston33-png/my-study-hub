@@ -46,8 +46,7 @@ export default function SubjectFilesModal({
       const subjectFiles = await getSubjectFiles(subject.id);
       setFiles(subjectFiles);
     } catch (error) {
-      console.error('Error loading files:', error);
-      setError('Failed to load files. Please try again.');
+setError('Failed to load files. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -88,8 +87,7 @@ export default function SubjectFilesModal({
       setFiles(prev => [...uploadedFiles, ...prev]);
 
     } catch (error) {
-      console.error('Error uploading files:', error);
-      setError('Failed to upload files. Please try again.');
+setError('Failed to upload files. Please try again.');
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -106,8 +104,7 @@ export default function SubjectFilesModal({
       setFiles(prev => prev.filter(file => file.id !== fileId));
 
     } catch (error) {
-      console.error('Error deleting file:', error);
-      setError('Failed to delete file. Please try again.');
+setError('Failed to delete file. Please try again.');
     }
   };
 

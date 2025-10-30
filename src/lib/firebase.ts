@@ -39,8 +39,7 @@ function initializeFirebase() {
         // If app already exists (can happen in hot reload), get existing instance
         app = initializeApp(firebaseConfig, 'my-study-hub-standalone');
               } else {
-        console.error('Firebase initialization error:', error);
-        throw error;
+throw error;
       }
     }
   }

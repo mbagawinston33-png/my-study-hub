@@ -135,8 +135,7 @@ export default function TaskFileUpload({
       setPreviewFile(file);
       setShowPreviewModal(true);
     } catch (error) {
-      console.error('Error during state updates:', error);
-    }
+}
   };
 
   const getFileIcon = (filename: string) => {

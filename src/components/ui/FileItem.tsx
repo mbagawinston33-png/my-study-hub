@@ -32,8 +32,7 @@ export default function FileItem({
       setIsDownloading(true);
       downloadFile(file);
     } catch (error) {
-      console.error('Error downloading file:', error);
-    } finally {
+} finally {
       setIsDownloading(false);
     }
   };
@@ -51,8 +50,7 @@ export default function FileItem({
       setIsDeleting(true);
       await onDelete(file.id);
     } catch (error) {
-      console.error('Error deleting file:', error);
-      setIsDeleting(false);
+setIsDeleting(false);
     }
   };
 

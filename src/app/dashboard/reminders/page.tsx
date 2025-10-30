@@ -36,8 +36,7 @@ export default function RemindersPage() {
       const userReminders = await getUserReminders(user.userId);
       setReminders(userReminders);
     } catch (error) {
-      console.error('Error loading reminders:', error);
-    } finally {
+} finally {
       setIsLoading(false);
     }
   };

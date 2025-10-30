@@ -46,8 +46,7 @@ export async function createReminder(userId: string, reminderData: ReminderFormD
       ...newDoc.data()
     } as Reminder;
   } catch (error) {
-    console.error('Error creating reminder:', error);
-    throw new Error('Failed to create reminder');
+throw new Error('Failed to create reminder');
   }
 }
 
@@ -70,8 +69,7 @@ export async function getUserReminders(userId: string): Promise<Reminder[]> {
       ...doc.data()
     })) as Reminder[];
   } catch (error) {
-    console.error('Error fetching reminders:', error);
-    throw new Error('Failed to fetch reminders');
+throw new Error('Failed to fetch reminders');
   }
 }
 
@@ -98,8 +96,7 @@ export async function getUpcomingReminders(userId: string): Promise<Reminder[]> 
       ...doc.data()
     })) as Reminder[];
   } catch (error) {
-    console.error('Error fetching upcoming reminders:', error);
-    throw new Error('Failed to fetch upcoming reminders');
+throw new Error('Failed to fetch upcoming reminders');
   }
 }
 
@@ -126,8 +123,7 @@ export async function getReminderById(userId: string, reminderId: string): Promi
 
     return reminder;
   } catch (error) {
-    console.error('Error fetching reminder:', error);
-    throw error instanceof Error ? error : new Error('Failed to fetch reminder');
+throw error instanceof Error ? error : new Error('Failed to fetch reminder');
   }
 }
 
@@ -172,8 +168,7 @@ export async function updateReminder(userId: string, reminderId: string, reminde
       ...updatedDoc.data()
     } as Reminder;
   } catch (error) {
-    console.error('Error updating reminder:', error);
-    throw error instanceof Error ? error : new Error('Failed to update reminder');
+throw error instanceof Error ? error : new Error('Failed to update reminder');
   }
 }
 
@@ -207,8 +202,7 @@ export async function toggleReminderCompletion(userId: string, reminderId: strin
       ...updatedDoc.data()
     } as Reminder;
   } catch (error) {
-    console.error('Error toggling reminder completion:', error);
-    throw error instanceof Error ? error : new Error('Failed to update reminder');
+throw error instanceof Error ? error : new Error('Failed to update reminder');
   }
 }
 
@@ -234,7 +228,6 @@ export async function deleteReminder(userId: string, reminderId: string): Promis
 
     await deleteDoc(docRef);
   } catch (error) {
-    console.error('Error deleting reminder:', error);
-    throw error instanceof Error ? error : new Error('Failed to delete reminder');
+throw error instanceof Error ? error : new Error('Failed to delete reminder');
   }
 }

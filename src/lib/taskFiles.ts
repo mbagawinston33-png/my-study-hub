@@ -112,8 +112,7 @@ export async function uploadTaskFile(
     return completeFileData;
 
   } catch (error) {
-    console.error('Error uploading task file:', error);
-    throw error;
+throw error;
   }
 }
 
@@ -137,8 +136,7 @@ export async function getTaskFiles(taskId: string, userId: string): Promise<Task
       ...doc.data()
     })) as TaskFile[];
   } catch (error) {
-    console.error('Error fetching task files:', error);
-    throw new Error('Failed to fetch task files');
+throw new Error('Failed to fetch task files');
   }
 }
 
@@ -165,8 +163,7 @@ export async function getTaskFileById(userId: string, fileId: string): Promise<T
 
     return file;
   } catch (error) {
-    console.error('Error fetching task file:', error);
-    throw error instanceof Error ? error : new Error('Failed to fetch task file');
+throw error instanceof Error ? error : new Error('Failed to fetch task file');
   }
 }
 
@@ -189,8 +186,7 @@ export async function deleteTaskFile(userId: string, fileId: string): Promise<vo
     const docRef = doc(db, TASK_FILES_COLLECTION, fileId);
     await deleteDoc(docRef);
   } catch (error) {
-    console.error('Error deleting task file:', error);
-    throw error instanceof Error ? error : new Error('Failed to delete file');
+throw error instanceof Error ? error : new Error('Failed to delete file');
   }
 }
 
@@ -227,8 +223,7 @@ export async function updateTaskFiles(userId: string, taskId: string, fileIds: s
       updatedAt: serverTimestamp()
     });
   } catch (error) {
-    console.error('Error updating task files:', error);
-    throw error instanceof Error ? error : new Error('Failed to update task files');
+throw error instanceof Error ? error : new Error('Failed to update task files');
   }
 }
 
@@ -248,8 +243,7 @@ export async function getTaskFileStats(taskId: string, userId: string): Promise<
       totalSize
     };
   } catch (error) {
-    console.error('Error getting task file stats:', error);
-    return {
+return {
       count: 0,
       totalSize: 0
     };
@@ -268,8 +262,7 @@ export async function deleteAllTaskFiles(taskId: string, userId: string): Promis
       files.map(file => deleteTaskFile(userId, file.id))
     );
   } catch (error) {
-    console.error('Error deleting all task files:', error);
-    throw new Error('Failed to delete task files');
+throw new Error('Failed to delete task files');
   }
 }
 
@@ -306,8 +299,7 @@ export async function updateTaskAttachedFiles(
     });
 
       } catch (error) {
-    console.error('Error updating task files:', error);
-    throw error instanceof Error ? error : new Error('Failed to update task files');
+throw error instanceof Error ? error : new Error('Failed to update task files');
   }
 }
 
@@ -339,8 +331,7 @@ export async function uploadTaskFiles(
 
       uploadedFiles.push(uploadedFile);
     } catch (error) {
-      console.error(`Failed to upload file ${file.name}:`, error);
-      // Continue with other files even if one fails
+// Continue with other files even if one fails
     }
   }
 

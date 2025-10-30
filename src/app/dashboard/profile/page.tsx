@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { updateUserProfile } from "@/lib/auth";
+import PasswordChangeForm from "@/components/auth/PasswordChangeForm";
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -143,6 +144,8 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <PasswordChangeForm />
     </div>
   );
 }

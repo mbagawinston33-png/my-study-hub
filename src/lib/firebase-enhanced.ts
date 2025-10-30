@@ -37,8 +37,7 @@ function initializeFirebaseEnhanced() {
       if ((error as { code?: string })?.code === 'app/duplicate-app') {
         app = initializeApp(firebaseConfig, 'my-study-hub-enhanced');
               } else {
-        console.error('Firebase initialization error:', error);
-        throw error;
+throw error;
       }
     }
   }

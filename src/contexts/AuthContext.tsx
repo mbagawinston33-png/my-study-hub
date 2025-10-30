@@ -77,8 +77,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // This would require implementing a createProfile function
           }
         } catch (error) {
-          console.error('Error fetching user profile:', error);
-          setAuthState({
+setAuthState({
             user: null,
             loading: false,
             error: 'Failed to load user profile. Please try again.'
@@ -117,8 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         error: null
       });
     } catch (error) {
-      console.error('Logout error:', error);
-      setAuthState(prev => ({
+setAuthState(prev => ({
         ...prev,
         loading: false,
         error: 'Failed to logout. Please try again.'
@@ -136,8 +134,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setAuthState(prev => ({ ...prev, user: userProfile }));
       }
     } catch (error) {
-      console.error('Error refreshing user profile:', error);
-    }
+}
   };
 
   // Role checking utilities

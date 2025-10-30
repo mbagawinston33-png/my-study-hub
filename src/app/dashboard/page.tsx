@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import ReminderModal from "@/components/reminder/ReminderModal";
 import ReminderCard from "@/components/reminder/ReminderCard";
 import TaskCard from "@/components/task/TaskCard";
+import Calendar from "@/components/calendar/Calendar";
 import { Reminder } from "@/types/reminder";
 import { Task, TaskWithSubject, TaskStats } from "@/types/task";
 import { getUpcomingReminders } from "@/lib/reminders";
@@ -37,8 +38,7 @@ export default function DashboardPage() {
       await logout();
       router.push("/login");
     } catch (error) {
-      console.error("Error signing out:", error);
-    }
+}
   };
 
   useEffect(() => {
@@ -58,8 +58,7 @@ export default function DashboardPage() {
       const reminders = await getUpcomingReminders(user.userId);
       setUpcomingReminders(reminders.slice(0, 3)); // Show only 3 upcoming reminders
     } catch (error) {
-      console.error("Error loading upcoming reminders:", error);
-    } finally {
+} finally {
       setIsLoadingReminders(false);
     }
   };
@@ -85,8 +84,7 @@ export default function DashboardPage() {
 
       setUpcomingTasks(tasksWithSubjects);
     } catch (error) {
-      console.error("Error loading upcoming tasks:", error);
-    } finally {
+} finally {
       setIsLoadingTasks(false);
     }
   };
@@ -98,8 +96,7 @@ export default function DashboardPage() {
       const stats = await getTaskStats(user.userId);
       setTaskStats(stats);
     } catch (error) {
-      console.error("Error loading task stats:", error);
-    }
+}
   };
 
   const loadUserData = async () => {
@@ -115,8 +112,7 @@ export default function DashboardPage() {
       setSubjects(userSubjects);
       setRecentFileCount(storageUsage > 0 ? 1 : 0); // Simplified - just show if any files exist
     } catch (error) {
-      console.error("Error loading user data:", error);
-    } finally {
+} finally {
       setIsLoadingData(false);
     }
   };
@@ -150,8 +146,7 @@ export default function DashboardPage() {
       // Update stats
       loadTaskStats();
     } catch (error) {
-      console.error("Error toggling task completion:", error);
-    }
+}
   };
 
   const handleTaskClick = (taskId: string) => {
@@ -207,96 +202,9 @@ export default function DashboardPage() {
       {/* Main Content Grid */}
       <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(12, 1fr)' }}>
 
-        {/* Recent Activity */}
-        <div className="card" style={{ gridColumn: 'span 8' }}>
-          <div className="row">
-            <h3 style={{ fontSize: 'var(--fs-h2)', margin: '0 0 14px', color: 'var(--text)' }}>Recent Activity</h3>
-            <span className="right badge" style={{
-              background: upcomingReminders.length > 0 ? 'var(--warn-100)' : 'var(--ok-100)',
-              color: upcomingReminders.length > 0 ? 'var(--warn)' : 'var(--ok)'
-            }}>
-              {upcomingReminders.length > 0 ? `${upcomingReminders.length} upcoming` : 'All caught up'}
-            </span>
-          </div>
-          <div className="hr"></div>
-
-          {/* Activity Items */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {isLoadingData ? (
-              <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-2)' }}>
-                Loading activity...
-              </div>
-            ) : (
-              <>
-                {/* Show recent tasks */}
-                {upcomingTasks.slice(0, 2).map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onToggleComplete={handleTaskToggleComplete}
-                    compact={true}
-                    showActions={false}
-                  />
-                ))}
-
-                {/* Show recent reminders */}
-                {upcomingReminders.slice(0, 1).map((reminder) => (
-                  <div key={reminder.id} className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <div className="row" style={{ flex: 1, gap: '12px' }}>
-                      <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--warn)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
-                        R
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <b style={{ color: 'var(--text)' }}>{reminder.title}</b>
-                        <div className="small">Due {reminder.dueDate.toDate().toLocaleDateString()}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Show subjects count */}
-                {subjects.length > 0 && (
-                  <div className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <div className="row" style={{ flex: 1, gap: '12px' }}>
-                      <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--ok)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
-                        S
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <b style={{ color: 'var(--text)' }}>Active Subjects</b>
-                        <div className="small">{subjects.length} subject{subjects.length !== 1 ? 's' : ''}</div>
-                      </div>
-                    </div>
-                    <span className="badge ok">{subjects.length}</span>
-                  </div>
-                )}
-
-                {/* Show files if any exist */}
-                {recentFileCount > 0 && (
-                  <div className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <div className="row" style={{ flex: 1, gap: '12px' }}>
-                      <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--brand)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
-                        F
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <b style={{ color: 'var(--text)' }}>Files Available</b>
-                        <div className="small">Study materials uploaded</div>
-                      </div>
-                    </div>
-                    <span className="badge brand">Ready</span>
-                  </div>
-                )}
-
-                {/* Show empty state if no activity */}
-                {upcomingTasks.length === 0 && upcomingReminders.length === 0 && subjects.length === 0 && recentFileCount === 0 && (
-                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-2)' }}>
-                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>📚</div>
-                    <div>No recent activity</div>
-                    <div className="small">Start by adding tasks, subjects, or reminders</div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+        {/* Calendar */}
+        <div style={{ gridColumn: 'span 8' }}>
+          <Calendar userId={user?.userId || ''} />
         </div>
 
         {/* Quick Actions & Progress */}

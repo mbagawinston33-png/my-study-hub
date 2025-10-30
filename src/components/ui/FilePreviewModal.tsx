@@ -59,8 +59,7 @@ export default function FilePreviewModal({
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Error during download:', error);
-    }
+}
   };
 
   const handlePreview = () => {
@@ -77,8 +76,7 @@ export default function FilePreviewModal({
         handleDownload();
       }
     } catch (error) {
-      console.error('Error during preview:', error);
-    }
+}
   };
 
   const getFileTypeLabel = (filename: string): string => {
@@ -111,8 +109,7 @@ export default function FilePreviewModal({
               }}
               onLoad={() => {}}
               onError={(e) => {
-                console.error('Error loading image:', e);
-                setError('Failed to load image');
+setError('Failed to load image');
               }}
             />
             <div style={{ marginTop: '12px', color: 'var(--text-2)', fontSize: '14px' }}>
@@ -136,8 +133,7 @@ export default function FilePreviewModal({
               }}
               onLoad={() => {}}
               onError={(e) => {
-                console.error('Error loading PDF:', e);
-                setError('Failed to load PDF');
+setError('Failed to load PDF');
               }}
             />
             <div style={{ marginTop: '12px', color: 'var(--text-2)', fontSize: '14px' }}>

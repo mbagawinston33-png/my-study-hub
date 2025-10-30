@@ -9,9 +9,10 @@
   --brand-s: 85%;
   --brand-l: 48%;
   --brand: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+  --brand-50: hsl(var(--brand-h) 95% 98%);
+  --brand-100: hsl(var(--brand-h) 95% 96%);
   --brand-600: hsl(var(--brand-h) var(--brand-s) 42%);
   --brand-700: hsl(var(--brand-h) 90% 36%);
-  --brand-100: hsl(var(--brand-h) 95% 96%);
 
   /* Accent Colors */
   --accent-h: 268;
@@ -26,6 +27,7 @@
 
   /* Surface Colors */
   --bg: hsl(0 0% 98%);
+  --bg-2: hsl(0 0% 95%);
   --card: hsl(0 0% 100%);
   --text: hsl(220 10% 12%);
   --text-2: hsl(220 8% 48%);

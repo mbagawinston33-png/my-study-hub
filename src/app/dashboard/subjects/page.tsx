@@ -44,8 +44,7 @@ const getSubjectsFromFirebase = async (userId: string): Promise<Subject[]> => {
 
     return subjects;
   } catch (error) {
-    console.error("Error loading subjects from Firebase:", error);
-    return [];
+return [];
   }
 };
 
@@ -69,8 +68,7 @@ export default function SubjectsPage() {
       const userSubjects = await getSubjectsFromFirebase(user.userId);
       setSubjects(userSubjects);
     } catch (error) {
-      console.error("Error refreshing subjects:", error);
-    } finally {
+} finally {
       setIsLoading(false);
     }
   };
@@ -118,8 +116,7 @@ export default function SubjectsPage() {
 
       
     } catch (error) {
-      console.error("Error deleting subject:", error);
-      // TODO: Show error message to user
+// TODO: Show error message to user
     }
   };
 
