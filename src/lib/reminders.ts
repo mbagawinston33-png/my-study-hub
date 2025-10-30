@@ -30,8 +30,6 @@ export async function createReminder(userId: string, reminderData: ReminderFormD
       title: reminderData.title.trim(),
       description: reminderData.description?.trim() || '',
       dueDate: Timestamp.fromDate(new Date(reminderData.dueDate)),
-      priority: reminderData.priority,
-      subjectId: reminderData.subjectId || null,
       isCompleted: false,
       createdAt: serverTimestamp(),
     };
@@ -163,12 +161,6 @@ export async function updateReminder(userId: string, reminderId: string, reminde
     }
     if (reminderData.dueDate !== undefined) {
       updateData.dueDate = Timestamp.fromDate(new Date(reminderData.dueDate));
-    }
-    if (reminderData.priority !== undefined) {
-      updateData.priority = reminderData.priority;
-    }
-    if (reminderData.subjectId !== undefined) {
-      updateData.subjectId = reminderData.subjectId || null;
     }
 
     await updateDoc(docRef, updateData);

@@ -56,25 +56,14 @@ export default function ReminderCard({
     }
   };
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return <span className="badge warn">High</span>;
-      case 'medium':
-        return <span className="badge ok">Medium</span>;
-      case 'low':
-        return <span className="badge">Low</span>;
-      default:
-        return <span className="badge">Low</span>;
-    }
-  };
-
+  
   const formatDueDate = (date: any) => {
     const dueDate = date.toDate();
     const now = new Date();
     const isOverdue = dueDate < now && !reminder.isCompleted;
     const isToday = dueDate.toDateString() === now.toDateString();
     const isTomorrow = dueDate.toDateString() === new Date(now.getTime() + 24 * 60 * 60 * 1000).toDateString();
+    const isThisWeek = !isToday && !isTomorrow && (dueDate.getTime() - now.getTime()) <= 7 * 24 * 60 * 60 * 1000;
 
     let dateText = '';
     let timeText = dueDate.toLocaleTimeString('en-US', {
@@ -87,6 +76,8 @@ export default function ReminderCard({
       dateText = 'Today';
     } else if (isTomorrow) {
       dateText = 'Tomorrow';
+    } else if (isThisWeek) {
+      dateText = dueDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     } else {
       dateText = dueDate.toLocaleDateString('en-US', {
         month: 'short',
@@ -95,16 +86,56 @@ export default function ReminderCard({
       });
     }
 
-    return { dateText, timeText, isOverdue };
+    return { dateText, timeText, isOverdue, isToday, isTomorrow };
+  };
+
+  const getUrgencyIndicator = () => {
+    const dueDate = reminder.dueDate.toDate();
+    const now = new Date();
+    const hoursUntilDue = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    if (reminder.isCompleted) return null;
+    if (hoursUntilDue < 0) return { color: 'var(--danger)', text: 'Overdue' };
+    if (hoursUntilDue < 24) return { color: 'var(--warn)', text: 'Due Today' };
+    if (hoursUntilDue < 48) return { color: '#f59e0b', text: 'Due Tomorrow' };
+    if (hoursUntilDue < 168) return { color: 'var(--ok)', text: 'This Week' };
+    return null;
+  };
+
+  const getSmartCategory = () => {
+    const text = `${reminder.title} ${reminder.description || ''}`.toLowerCase();
+
+    if (text.includes('homework') || text.includes('assignment') || text.includes('hw')) {
+      return { icon: '📚', text: 'Homework', color: '#3b82f6' };
+    }
+    if (text.includes('exam') || text.includes('test') || text.includes('quiz')) {
+      return { icon: '📝', text: 'Exam', color: '#ef4444' };
+    }
+    if (text.includes('project') || text.includes('presentation')) {
+      return { icon: '🚀', text: 'Project', color: '#8b5cf6' };
+    }
+    if (text.includes('meeting') || text.includes('class') || text.includes('lecture')) {
+      return { icon: '👥', text: 'Meeting', color: '#10b981' };
+    }
+    if (text.includes('study') || text.includes('review') || text.includes('reading')) {
+      return { icon: '📖', text: 'Study', color: '#f59e0b' };
+    }
+    if (text.includes('deadline') || text.includes('submit')) {
+      return { icon: '⏰', text: 'Deadline', color: '#ef4444' };
+    }
+
+    return null;
   };
 
   const { dateText, timeText, isOverdue } = formatDueDate(reminder.dueDate);
+  const urgencyIndicator = getUrgencyIndicator();
+  const smartCategory = getSmartCategory();
 
   const cardStyle = {
     padding: compact ? '12px' : '16px',
     borderRadius: '12px',
-    border: `1px solid ${reminder.isCompleted ? 'var(--border)' : isOverdue ? 'var(--danger)' : 'var(--border)'}`,
-    background: reminder.isCompleted ? 'var(--bg-secondary)' : isOverdue ? 'var(--danger-50)' : 'var(--bg)',
+    border: `1px solid ${reminder.isCompleted ? 'var(--border)' : urgencyIndicator ? urgencyIndicator.color : 'var(--border)'}`,
+    background: reminder.isCompleted ? 'var(--bg-secondary)' : urgencyIndicator && urgencyIndicator.color === 'var(--danger)' ? 'var(--danger-50)' : 'var(--bg)',
     opacity: reminder.isCompleted ? 0.7 : 1,
     transition: 'all 0.2s ease'
   };
@@ -146,10 +177,34 @@ export default function ReminderCard({
             }}>
               {reminder.title}
             </h4>
-            {getPriorityBadge(reminder.priority)}
-            {isOverdue && !reminder.isCompleted && (
-              <span className="badge warn" style={{ fontSize: '11px' }}>
-                Overdue
+                        {urgencyIndicator && (
+              <span
+                className="badge"
+                style={{
+                  fontSize: '11px',
+                  background: urgencyIndicator.color === 'var(--danger)' ? 'var(--danger-100)' :
+                             urgencyIndicator.color === 'var(--warn)' ? 'var(--warn-100)' :
+                             urgencyIndicator.color === '#f59e0b' ? 'color-mix(in srgb, #f59e0b, #fff 80%)' :
+                             'var(--ok-100)',
+                  color: urgencyIndicator.color,
+                  border: `1px solid ${urgencyIndicator.color}20`
+                }}
+              >
+                {urgencyIndicator.text}
+              </span>
+            )}
+            {smartCategory && (
+              <span
+                className="badge"
+                style={{
+                  fontSize: '11px',
+                  background: `${smartCategory.color}15`,
+                  color: smartCategory.color,
+                  border: `1px solid ${smartCategory.color}30`,
+                  marginRight: '4px'
+                }}
+              >
+                {smartCategory.icon} {smartCategory.text}
               </span>
             )}
           </div>

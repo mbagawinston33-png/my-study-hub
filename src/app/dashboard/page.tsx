@@ -7,13 +7,18 @@ import ReminderModal from "@/components/reminder/ReminderModal";
 import ReminderCard from "@/components/reminder/ReminderCard";
 import { Reminder } from "@/types/reminder";
 import { getUpcomingReminders } from "@/lib/reminders";
+import { getUserSubjects, getUserStorageUsage } from "@/lib/storage";
+import { Subject, SubjectWithFileCount } from "@/types/subject";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [recentFileCount, setRecentFileCount] = useState(0);
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
   const [isLoadingReminders, setIsLoadingReminders] = useState(true);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const handleSignOut = async () => {
     try {
@@ -25,7 +30,10 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    loadUpcomingReminders();
+    if (user) {
+      loadUpcomingReminders();
+      loadUserData();
+    }
   }, [user]);
 
   const loadUpcomingReminders = async () => {
@@ -39,6 +47,25 @@ export default function DashboardPage() {
       console.error("Error loading upcoming reminders:", error);
     } finally {
       setIsLoadingReminders(false);
+    }
+  };
+
+  const loadUserData = async () => {
+    if (!user) return;
+
+    setIsLoadingData(true);
+    try {
+      const [userSubjects, storageUsage] = await Promise.all([
+        getUserSubjects(user.userId),
+        getUserStorageUsage(user.userId)
+      ]);
+
+      setSubjects(userSubjects);
+      setRecentFileCount(storageUsage > 0 ? 1 : 0); // Simplified - just show if any files exist
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    } finally {
+      setIsLoadingData(false);
     }
   };
 
@@ -95,54 +122,80 @@ export default function DashboardPage() {
         <div className="card" style={{ gridColumn: 'span 8' }}>
           <div className="row">
             <h3 style={{ fontSize: 'var(--fs-h2)', margin: '0 0 14px', color: 'var(--text)' }}>Recent Activity</h3>
-            <span className="right badge warn">3 new</span>
+            <span className="right badge" style={{
+              background: upcomingReminders.length > 0 ? 'var(--warn-100)' : 'var(--ok-100)',
+              color: upcomingReminders.length > 0 ? 'var(--warn)' : 'var(--ok)'
+            }}>
+              {upcomingReminders.length > 0 ? `${upcomingReminders.length} upcoming` : 'All caught up'}
+            </span>
           </div>
           <div className="hr"></div>
 
           {/* Activity Items */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div className="row" style={{ padding: '10px', borderRadius: '12px', background: 'var(--brand-100)' }}>
-              <div className="row" style={{ flex: 1, gap: '12px' }}>
-                <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--brand)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
-                  T
-                </div>
-                <div style={{ flex: 1 }}>
-                  <b style={{ color: 'var(--text)' }}>Math Assignment Completed</b>
-                  <div className="small">Calculus Problem Set #5 • 2 hours ago</div>
-                </div>
+            {isLoadingData ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-2)' }}>
+                Loading activity...
               </div>
-              <span className="badge ok">Done</span>
-            </div>
+            ) : (
+              <>
+                {/* Show recent reminders */}
+                {upcomingReminders.slice(0, 2).map((reminder) => (
+                  <div key={reminder.id} className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                    <div className="row" style={{ flex: 1, gap: '12px' }}>
+                      <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--warn)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
+                        R
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <b style={{ color: 'var(--text)' }}>{reminder.title}</b>
+                        <div className="small">Due {reminder.dueDate.toDate().toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
 
-            {upcomingReminders.length > 0 && (
-              <div className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <div className="row" style={{ flex: 1, gap: '12px' }}>
-                  <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--warn)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
-                    R
+                {/* Show subjects count */}
+                {subjects.length > 0 && (
+                  <div className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                    <div className="row" style={{ flex: 1, gap: '12px' }}>
+                      <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--ok)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
+                        S
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <b style={{ color: 'var(--text)' }}>Active Subjects</b>
+                        <div className="small">{subjects.length} subject{subjects.length !== 1 ? 's' : ''}</div>
+                      </div>
+                    </div>
+                    <span className="badge ok">{subjects.length}</span>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <b style={{ color: 'var(--text)' }}>Latest Reminder</b>
-                    <div className="small">{upcomingReminders[0].title} • Due {upcomingReminders[0].dueDate.toDate().toLocaleDateString()}</div>
+                )}
+
+                {/* Show files if any exist */}
+                {recentFileCount > 0 && (
+                  <div className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                    <div className="row" style={{ flex: 1, gap: '12px' }}>
+                      <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--brand)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
+                        F
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <b style={{ color: 'var(--text)' }}>Files Available</b>
+                        <div className="small">Study materials uploaded</div>
+                      </div>
+                    </div>
+                    <span className="badge brand">Ready</span>
                   </div>
-                </div>
-                <span className="badge warn">
-                  {upcomingReminders[0].priority}
-                </span>
-              </div>
+                )}
+
+                {/* Show empty state if no activity */}
+                {upcomingReminders.length === 0 && subjects.length === 0 && recentFileCount === 0 && (
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-2)' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>📚</div>
+                    <div>No recent activity</div>
+                    <div className="small">Start by adding subjects or reminders</div>
+                  </div>
+                )}
+              </>
             )}
-
-            <div className="row" style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-              <div className="row" style={{ flex: 1, gap: '12px' }}>
-                <div className="row" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--accent)', color: 'white', justifyContent: 'center', fontWeight: '700' }}>
-                  F
-                </div>
-                <div style={{ flex: 1 }}>
-                  <b style={{ color: 'var(--text)' }}>New File Uploaded</b>
-                  <div className="small">Chemistry Notes.pdf • 5 hours ago</div>
-                </div>
-              </div>
-              <span className="badge brand">New</span>
-            </div>
           </div>
         </div>
 
@@ -169,11 +222,13 @@ export default function DashboardPage() {
 
           <div className="hr" style={{ margin: '20px 0' }}></div>
 
-          <h4 style={{ fontSize: 'var(--fs-h3)', margin: '0 0 10px', color: 'var(--text)' }}>Weekly Progress</h4>
+          <h4 style={{ fontSize: 'var(--fs-h3)', margin: '0 0 10px', color: 'var(--text)' }}>Your Progress</h4>
           <div style={{ height: '10px', background: 'var(--border)', borderRadius: '999px', overflow: 'hidden', marginBottom: '6px' }}>
-            <div style={{ display: 'block', height: '100%', width: '72%', background: 'var(--brand)', borderRadius: '999px' }}></div>
+            <div style={{ display: 'block', height: '100%', width: `${Math.min(100, (subjects.length / 5) * 100)}%`, background: 'var(--brand)', borderRadius: '999px' }}></div>
           </div>
-          <div className="small">18 of 25 tasks completed</div>
+          <div className="small">
+            {subjects.length === 0 ? 'No subjects yet' : `${subjects.length} subject${subjects.length !== 1 ? 's' : ''} added`}
+          </div>
         </div>
 
         {/* Upcoming Reminders */}
@@ -194,13 +249,7 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {upcomingReminders.slice(0, 3).map((reminder) => (
                 <div key={reminder.id} className="row" style={{ gap: '10px' }}>
-                  <span className={`badge ${
-                    reminder.priority === 'high' ? 'warn' :
-                    reminder.priority === 'medium' ? 'ok' : ''
-                  }`}>
-                    {reminder.priority}
-                  </span>
-                  <div style={{ flex: 1 }}>
+                                    <div style={{ flex: 1 }}>
                     <b style={{ color: 'var(--text)' }}>{reminder.title}</b>
                     <div className="small">
                       Due {reminder.dueDate.toDate().toLocaleDateString()} • {reminder.dueDate.toDate().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
@@ -228,28 +277,41 @@ export default function DashboardPage() {
         <div className="card" style={{ gridColumn: 'span 6' }}>
           <div className="row">
             <h3 style={{ fontSize: 'var(--fs-h2)', margin: '0 0 14px', color: 'var(--text)' }}>Subject Overview</h3>
-            <span className="right badge ok">6 Active</span>
+            <span className="right badge ok">{subjects.length} Active</span>
           </div>
           <div className="hr"></div>
 
-          <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(2, 1fr)' }}>
-            <div className="row" style={{ gap: '8px' }}>
-              <span className="badge brand">Math</span>
-              <div className="small">8 tasks</div>
+          {isLoadingData ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-2)' }}>
+              Loading subjects...
             </div>
-            <div className="row" style={{ gap: '8px' }}>
-              <span className="badge brand">Physics</span>
-              <div className="small">5 tasks</div>
+          ) : subjects.length > 0 ? (
+            <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(2, 1fr)' }}>
+              {subjects.slice(0, 4).map((subject) => (
+                <div key={subject.id} className="row" style={{ gap: '8px' }}>
+                  <span
+                    className="badge"
+                    style={{
+                      background: `${subject.color}15`,
+                      color: subject.color,
+                      border: `1px solid ${subject.color}30`
+                    }}
+                  >
+                    {subject.code || subject.name}
+                  </span>
+                  <div className="small">
+                    Active
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="row" style={{ gap: '8px' }}>
-              <span className="badge brand">Chemistry</span>
-              <div className="small">6 tasks</div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-2)' }}>
+              <div style={{ fontSize: '20px', marginBottom: '8px' }}>📚</div>
+              <div>No subjects yet</div>
+              <div className="small">Add your first subject to get started</div>
             </div>
-            <div className="row" style={{ gap: '8px' }}>
-              <span className="badge brand">Biology</span>
-              <div className="small">5 tasks</div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 

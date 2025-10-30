@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { ReminderFormData, ReminderPriority, REMINDER_PRIORITIES } from '@/types/reminder';
-import { Subject } from '@/types/subject';
-import { getUserSubjects } from '@/lib/storage';
+import { useState } from 'react';
+import { ReminderFormData } from '@/types/reminder';
 
 interface ReminderFormProps {
   initialData?: Partial<ReminderFormData>;
@@ -24,28 +22,9 @@ export default function ReminderForm({
     title: initialData?.title || '',
     description: initialData?.description || '',
     dueDate: initialData?.dueDate || '',
-    priority: initialData?.priority || 'medium',
-    subjectId: initialData?.subjectId || '',
   });
 
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadSubjects = async () => {
-      try {
-        const userSubjects = await getUserSubjects();
-        setSubjects(userSubjects.filter(subject => subject.isActive));
-      } catch (err) {
-        console.error('Error loading subjects:', err);
-      } finally {
-        setIsLoadingSubjects(false);
-      }
-    };
-
-    loadSubjects();
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,19 +57,7 @@ export default function ReminderForm({
     }));
   };
 
-  const getPriorityBadgeClass = (priority: ReminderPriority) => {
-    switch (priority) {
-      case 'high':
-        return 'badge warn';
-      case 'medium':
-        return 'badge ok';
-      case 'low':
-        return 'badge';
-      default:
-        return 'badge';
-    }
-  };
-
+  
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {error && (
@@ -194,87 +161,7 @@ export default function ReminderForm({
         />
       </div>
 
-      {/* Priority */}
-      <div>
-        <label style={{
-          display: 'block',
-          marginBottom: '6px',
-          fontSize: '14px',
-          fontWeight: '500',
-          color: 'var(--text)'
-        }}>
-          Priority
-        </label>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {(Object.keys(REMINDER_PRIORITIES) as ReminderPriority[]).map((priority) => (
-            <button
-              key={priority}
-              type="button"
-              onClick={() => handleInputChange('priority', priority)}
-              className={formData.priority === priority ? getPriorityBadgeClass(priority) : 'btn ghost'}
-              style={{
-                padding: '6px 12px',
-                fontSize: '12px',
-                borderRadius: '6px',
-                border: formData.priority === priority ? '1px solid var(--brand)' : '1px solid var(--border)',
-                background: formData.priority === priority ? 'var(--brand)' : 'var(--bg)',
-                color: formData.priority === priority ? 'white' : 'var(--text)',
-                cursor: 'pointer'
-              }}
-              disabled={isLoading}
-            >
-              {REMINDER_PRIORITIES[priority]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Subject */}
-      <div>
-        <label style={{
-          display: 'block',
-          marginBottom: '6px',
-          fontSize: '14px',
-          fontWeight: '500',
-          color: 'var(--text)'
-        }}>
-          Subject (Optional)
-        </label>
-        {isLoadingSubjects ? (
-          <div style={{
-            padding: '10px 12px',
-            borderRadius: '8px',
-            border: '1px solid var(--border)',
-            fontSize: '14px',
-            color: 'var(--text-2)'
-          }}>
-            Loading subjects...
-          </div>
-        ) : (
-          <select
-            value={formData.subjectId}
-            onChange={(e) => handleInputChange('subjectId', e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: '1px solid var(--border)',
-              fontSize: '14px',
-              background: 'var(--bg)',
-              color: 'var(--text)'
-            }}
-            disabled={isLoading}
-          >
-            <option value="">No subject</option>
-            {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name} {subject.code && `(${subject.code})`}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
+      
       {/* Actions */}
       <div className="row" style={{ gap: '8px', justifyContent: 'flex-end' }}>
         {onCancel && (

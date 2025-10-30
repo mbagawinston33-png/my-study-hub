@@ -9,7 +9,7 @@ import { getUserReminders } from '@/lib/reminders';
 import { useAuth } from '@/contexts/AuthContext';
 
 type FilterType = 'all' | 'pending' | 'completed' | 'overdue';
-type SortType = 'dueDate' | 'priority' | 'created';
+type SortType = 'dueDate' | 'created';
 
 export default function RemindersPage() {
   const { user } = useAuth();
@@ -64,9 +64,6 @@ export default function RemindersPage() {
       switch (sort) {
         case 'dueDate':
           return a.dueDate.toDate().getTime() - b.dueDate.toDate().getTime();
-        case 'priority':
-          const priorityOrder = { high: 0, medium: 1, low: 2 };
-          return priorityOrder[a.priority] - priorityOrder[b.priority];
         case 'created':
           return b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime();
         default:
@@ -224,8 +221,7 @@ export default function RemindersPage() {
               }}
             >
               <option value="dueDate">Due Date</option>
-              <option value="priority">Priority</option>
-              <option value="created">Date Created</option>
+                            <option value="created">Date Created</option>
             </select>
           </div>
         </div>

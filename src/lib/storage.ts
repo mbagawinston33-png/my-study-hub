@@ -389,14 +389,13 @@ export async function verifyFileAccess(fileId: string, userId: string): Promise<
 /**
  * Get all subjects for a user
  */
-export async function getUserSubjects(): Promise<Subject[]> {
+export async function getUserSubjects(userId: string): Promise<Subject[]> {
   const db = getDb();
 
   try {
-    // For now, return empty array until proper auth context is available
-    // In a real implementation, you would pass userId as parameter
     const subjectsQuery = query(
       collection(db, 'subjects'),
+      where('userId', '==', userId),
       where('isActive', '==', true),
       orderBy('name', 'asc')
     );

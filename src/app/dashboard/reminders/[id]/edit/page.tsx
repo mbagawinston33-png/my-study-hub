@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import ReminderForm from '@/components/reminder/ReminderForm';
@@ -8,9 +8,10 @@ import { Reminder, ReminderFormData } from '@/types/reminder';
 import { getReminderById, updateReminder, deleteReminder } from '@/lib/reminders';
 import { useAuth } from '@/contexts/AuthContext';
 
-export default function EditReminderPage({ params }: { params: { id: string } }) {
+export default function EditReminderPage({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth();
   const router = useRouter();
+  const resolvedParams = use(params);
   const [reminder, setReminder] = useState<Reminder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -19,7 +20,7 @@ export default function EditReminderPage({ params }: { params: { id: string } })
 
   useEffect(() => {
     loadReminder();
-  }, [params.id]);
+  }, [resolvedParams.id]);
 
   const loadReminder = async () => {
     if (!user) return;
@@ -28,7 +29,7 @@ export default function EditReminderPage({ params }: { params: { id: string } })
     setError(null);
 
     try {
-      const reminderData = await getReminderById(user.userId, params.id);
+      const reminderData = await getReminderById(user.userId, resolvedParams.id);
       setReminder(reminderData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load reminder');
@@ -80,12 +81,18 @@ export default function EditReminderPage({ params }: { params: { id: string } })
   const getInitialFormData = (): Partial<ReminderFormData> => {
     if (!reminder) return {};
 
+    const date = reminder.dueDate.toDate();
+    // Format the date as local datetime string (YYYY-MM-DDTHH:MM)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
     return {
       title: reminder.title,
       description: reminder.description,
-      dueDate: reminder.dueDate.toDate().toISOString().slice(0, 16),
-      priority: reminder.priority,
-      subjectId: reminder.subjectId || '',
+      dueDate: `${year}-${month}-${day}T${hours}:${minutes}`,
     };
   };
 
