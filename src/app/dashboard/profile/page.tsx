@@ -5,15 +5,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { updateUserProfile } from "@/lib/auth";
 import PasswordChangeForm from "@/components/auth/PasswordChangeForm";
+import AccountDeletionModal from "@/components/auth/AccountDeletionModal";
 
 export default function ProfilePage() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [showDeletionModal, setShowDeletionModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -46,6 +48,11 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAccountDeleted = async () => {
+    await logout();
+    router.push("/");
   };
 
   return (
@@ -146,6 +153,27 @@ export default function ProfilePage() {
       </div>
 
       <PasswordChangeForm />
+
+      <div className="mt-8 bg-red-50 p-6 rounded-lg border border-red-200">
+        <div className="mb-4">
+          <h3 className="text-lg font-medium text-red-900">Delete Account</h3>
+          <p className="text-red-600 text-sm mt-1">
+            Permanently delete your account and all associated data. This action cannot be undone.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowDeletionModal(true)}
+          className="px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+        >
+          Delete My Account
+        </button>
+      </div>
+
+      <AccountDeletionModal
+        isOpen={showDeletionModal}
+        onClose={() => setShowDeletionModal(false)}
+        onSuccess={handleAccountDeleted}
+      />
     </div>
   );
 }

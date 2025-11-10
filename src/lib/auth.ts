@@ -9,6 +9,7 @@ import {
   signOut,
   updatePassword,
   reauthenticateWithCredential,
+  deleteUser,
   EmailAuthProvider,
   User as FirebaseUser,
   UserCredential
@@ -18,11 +19,13 @@ import {
   setDoc,
   updateDoc,
   getDoc,
+  deleteDoc,
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
 
-import { getAuthInstance, getDb } from './firebase';
+import { getAuthInstance, getDb, getStorageInstance } from './firebase';
+import { ref, listAll, deleteObject } from 'firebase/storage';
 import type {
   RegistrationFormData,
   LoginFormData,
@@ -364,6 +367,102 @@ export async function changeUserPassword(
           error: {
             code: errorCode,
             message: (error as { message?: string }).message || 'Failed to change password. Please try again.'
+          }
+        };
+    }
+  }
+}
+
+/**
+ * Delete user account and all associated data
+ */
+export async function deleteUserAccount(
+  currentPassword: string
+): Promise<{ success: boolean; error?: AuthError }> {
+  try {
+    const auth = getAuthInstance();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser || !currentUser.email) {
+      return {
+        success: false,
+        error: {
+          code: 'no-user',
+          message: 'No authenticated user found. Please log in again.'
+        }
+      };
+    }
+
+    // Reauthenticate user first (required for security-sensitive operations)
+    const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+    await reauthenticateWithCredential(currentUser, credential);
+
+    // Delete user's files from Firebase Storage
+    try {
+      const storage = getStorageInstance();
+      const userFilesRef = ref(storage, `users/${currentUser.uid}/`);
+      const filesList = await listAll(userFilesRef);
+
+      // Delete all files in user's directory
+      const deletePromises = filesList.items.map(fileRef => deleteObject(fileRef));
+      await Promise.all(deletePromises);
+    } catch (storageError) {
+      // Continue with deletion even if file cleanup fails
+      console.warn('Failed to delete user files:', storageError);
+    }
+
+    // Delete user document from Firestore
+    try {
+      await deleteDoc(doc(getDb(), 'users', currentUser.uid));
+    } catch (firestoreError) {
+      console.warn('Failed to delete user document:', firestoreError);
+    }
+
+    // Delete user from Firebase Auth
+    await deleteUser(currentUser);
+
+    return { success: true };
+
+  } catch (error: unknown) {
+    const errorCode = (error as { code?: string }).code || 'unknown-error';
+
+    // Handle specific error cases
+    switch (errorCode) {
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+        return {
+          success: false,
+          error: {
+            code: 'invalid-current-password',
+            message: 'Current password is incorrect. Please try again.',
+            field: 'currentPassword'
+          }
+        };
+
+      case 'auth/too-many-requests':
+        return {
+          success: false,
+          error: {
+            code: 'too-many-requests',
+            message: 'Too many failed attempts. Please try again later.'
+          }
+        };
+
+      case 'auth/requires-recent-login':
+        return {
+          success: false,
+          error: {
+            code: 'requires-recent-login',
+            message: 'Please log in again before deleting your account.'
+          }
+        };
+
+      default:
+        return {
+          success: false,
+          error: {
+            code: errorCode,
+            message: (error as { message?: string }).message || 'Failed to delete account. Please try again.'
           }
         };
     }
