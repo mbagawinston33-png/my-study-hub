@@ -33,7 +33,7 @@ import {
   TaskFile,
   Task
 } from '@/types/task';
-import { FileType } from '@/types/subject';
+import { FileType, FileValidationRules } from '@/types/subject';
 import {
   generateTaskSafeFilename,
   getTaskStoragePath,
@@ -341,30 +341,43 @@ export async function uploadTaskFiles(
 /**
  * Validate file before upload
  */
-export function validateTaskFile(file: File): {
+export function validateTaskFile(file: File, validationRules?: FileValidationRules): {
   isValid: boolean;
   error?: string;
 } {
-  const maxSizeBytes = 10 * 1024 * 1024; // 10MB
-  const allowedTypes = [
-    'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx',
-    'jpg', 'jpeg', 'png', 'gif', 'txt', 'md', 'zip', 'rar'
-  ];
+  // Use provided validation rules or fallback to defaults
+  const rules = validationRules || {
+    maxSizeBytes: 10 * 1024 * 1024, // 10MB
+    allowedTypes: [
+      'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx',
+      'jpg', 'jpeg', 'png', 'gif', 'txt', 'md', 'zip', 'rar', 'other'
+    ],
+    maxFilesPerSubject: 50,
+    maxFileNameLength: 255
+  };
 
   // Check file size
-  if (file.size > maxSizeBytes) {
+  if (file.size > rules.maxSizeBytes) {
     return {
       isValid: false,
-      error: 'File size must be less than 10MB'
+      error: `File size must be less than ${(rules.maxSizeBytes / (1024 * 1024)).toFixed(1)}MB`
     };
   }
 
   // Check file type
   const fileExtension = file.name.split('.').pop()?.toLowerCase();
-  if (!fileExtension || !allowedTypes.includes(fileExtension)) {
+  if (!fileExtension || !rules.allowedTypes.includes(fileExtension as FileType)) {
     return {
       isValid: false,
       error: `File type .${fileExtension} is not allowed`
+    };
+  }
+
+  // Check file name length using dynamic limit
+  if (file.name.length > rules.maxFileNameLength) {
+    return {
+      isValid: false,
+      error: `File name is too long (maximum ${rules.maxFileNameLength} characters)`
     };
   }
 

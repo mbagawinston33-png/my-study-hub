@@ -99,6 +99,7 @@ export type FileType =
   | 'jpg' | 'jpeg' | 'png' | 'gif'
   | 'txt' | 'md'
   | 'zip' | 'rar'
+  | 'mp4' | 'mp3' | 'wav'
   | 'other';
 
 export interface SubjectFile {
@@ -127,6 +128,7 @@ export interface FileValidationRules {
   maxSizeBytes: number;
   allowedTypes: FileType[];
   maxFilesPerSubject: number;
+  maxFileNameLength: number;
 }
 
 export interface FileValidationError {
@@ -234,6 +236,27 @@ export const FILE_TYPE_CONFIG = {
     color: '#A855F7',
     category: 'archive' as const
   },
+
+  // Media
+  mp4: {
+    mime: ['video/mp4'],
+    icon: 'MP4',
+    color: '#DC2626',
+    category: 'media' as const
+  },
+  mp3: {
+    mime: ['audio/mpeg', 'audio/mp3'],
+    icon: 'MP3',
+    color: '#7C3AED',
+    category: 'media' as const
+  },
+  wav: {
+    mime: ['audio/wav', 'audio/wave'],
+    icon: 'WAV',
+    color: '#7C3AED',
+    category: 'media' as const
+  },
+
   other: {
     mime: [],
     icon: 'FILE',
@@ -246,7 +269,8 @@ export const FILE_TYPE_CONFIG = {
 export const DEFAULT_FILE_VALIDATION_RULES: FileValidationRules = {
   maxSizeBytes: 10 * 1024 * 1024, // 10MB
   allowedTypes: Object.keys(FILE_TYPE_CONFIG) as FileType[],
-  maxFilesPerSubject: 50
+  maxFilesPerSubject: 50,
+  maxFileNameLength: 255
 };
 
 // Update Subject interface to include file count

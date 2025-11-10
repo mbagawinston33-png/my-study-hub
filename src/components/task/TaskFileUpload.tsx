@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { TaskFile } from "@/types/task";
 import { validateTaskFile } from "@/lib/taskFiles";
+import { getFileValidationRules, createValidationRulesFromAdminConfig } from '@/lib/adminConfig';
+import { DEFAULT_FILE_VALIDATION_RULES, FileValidationRules } from '@/types/subject';
 import {
   Upload,
   X,
@@ -23,6 +25,7 @@ interface TaskFileUploadProps {
   onUploadProgress?: (progress: number) => void;
   maxFiles?: number;
   disabled?: boolean;
+  validationRules?: FileValidationRules;
 }
 
 export default function TaskFileUpload({
@@ -32,7 +35,8 @@ export default function TaskFileUpload({
   onFilesChange,
   onUploadProgress,
   maxFiles = 10,
-  disabled = false
+  disabled = false,
+  validationRules = DEFAULT_FILE_VALIDATION_RULES
 }: TaskFileUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
@@ -41,6 +45,24 @@ export default function TaskFileUpload({
   const [isUploading, setIsUploading] = useState(false);
   const [previewFile, setPreviewFile] = useState<TaskFile | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [currentValidationRules, setCurrentValidationRules] = useState<FileValidationRules>(validationRules);
+
+  // Load admin validation rules on component mount
+  useEffect(() => {
+    const loadValidationRules = async () => {
+      try {
+        const adminConfig = await getFileValidationRules();
+        const rules = createValidationRulesFromAdminConfig(adminConfig);
+        setCurrentValidationRules(rules);
+      } catch (error) {
+        console.error('Failed to load file validation rules:', error);
+        // Fall back to provided rules or defaults
+        setCurrentValidationRules(validationRules);
+      }
+    };
+
+    loadValidationRules();
+  }, [validationRules]);
 
   const handleFileSelect = useCallback((files: FileList | null) => {
     if (!files || disabled) return;
@@ -56,9 +78,9 @@ export default function TaskFileUpload({
       return;
     }
 
-    // Validate each file
+    // Validate each file using current validation rules
     newFiles.forEach((file, index) => {
-      const validation = validateTaskFile(file);
+      const validation = validateTaskFile(file, currentValidationRules);
       if (validation.isValid) {
         validFiles.push(file);
       } else {
@@ -204,11 +226,11 @@ export default function TaskFileUpload({
         </div>
 
         <div className="small" style={{ color: 'var(--text-2)' }}>
-          Maximum {maxFiles} files • 10MB per file
+          Maximum {maxFiles} files • {(currentValidationRules.maxSizeBytes / (1024 * 1024)).toFixed(1)}MB per file
         </div>
 
         <div className="small" style={{ color: 'var(--text-2)', marginTop: '4px' }}>
-          Supported: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG, GIF, TXT, ZIP, RAR
+          Supported: {currentValidationRules.allowedTypes.join(', ').toUpperCase()}
         </div>
       </div>
 

@@ -8,9 +8,11 @@ import {
   FILE_TYPE_CONFIG,
   FileValidationRules,
   FileValidationError,
-  SubjectFile
+  SubjectFile,
+  DEFAULT_FILE_VALIDATION_RULES
 } from '@/types/subject';
 import { TaskFile } from '@/types/task';
+import { AdminFileConfig } from '@/types/admin';
 import { Timestamp } from 'firebase/firestore';
 
 /**
@@ -38,6 +40,18 @@ export function getFileType(file: File): FileType {
     }
   }
   return 'other';
+}
+
+/**
+ * Converts admin file configuration to validation rules
+ */
+export function createValidationRulesFromAdminConfig(adminConfig: AdminFileConfig): FileValidationRules {
+  return {
+    allowedTypes: adminConfig.allowedFileTypes,
+    maxSizeBytes: adminConfig.maxFileSizeBytes,
+    maxFilesPerSubject: adminConfig.maxFilesPerSubject,
+    maxFileNameLength: adminConfig.maxFileNameLength
+  };
 }
 
 /**
@@ -85,6 +99,15 @@ export function validateFile(
     };
   }
 
+  // Check file name length using dynamic limit
+  if (file.name.length > rules.maxFileNameLength) {
+    return {
+      file,
+      message: `File name is too long (maximum ${rules.maxFileNameLength} characters)`,
+      type: 'name'
+    };
+  }
+
   // Check for invalid characters in filename
   const invalidChars = /[<>:"/\\|?*]/;
   if (invalidChars.test(file.name)) {
@@ -124,12 +147,22 @@ export function validateFiles(
 /**
  * Generates a safe filename for storage
  */
-export function generateSafeFilename(originalName: string, subjectId: string): string {
+export function generateSafeFilename(originalName: string, subjectId: string, maxFileNameLength: number = 100): string {
   const timestamp = Date.now();
   const extension = getFileExtension(originalName);
-  const baseName = originalName.replace(`.${extension}`, '')
-    .replace(/[^a-zA-Z0-9-_]/g, '_')
-    .substring(0, 50); // Limit length
+
+  // Remove extension and clean the base name
+  let baseName = originalName.replace(`.${extension}`, '')
+    .replace(/[^a-zA-Z0-9-_]/g, '_');
+
+  // Calculate max base name length (subjectId + timestamp + underscores + extension)
+  const prefixLength = subjectId.length + timestamp.toString().length + 2; // 2 underscores
+  const suffixLength = extension.length + 1; // dot + extension
+  const maxBaseLength = maxFileNameLength - prefixLength - suffixLength;
+
+  // Limit base name length, ensuring it's at least 10 characters
+  const targetLength = Math.max(10, Math.min(maxBaseLength, baseName.length));
+  baseName = baseName.substring(0, targetLength);
 
   return `${subjectId}_${timestamp}_${baseName}.${extension}`;
 }

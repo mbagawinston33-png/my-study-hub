@@ -5,8 +5,9 @@ import { FolderOpen, X, Upload, Loader2, AlertCircle } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import FileUpload from '@/components/ui/FileUpload';
 import FileList from '@/components/ui/FileList';
-import { Subject, SubjectFile, DEFAULT_FILE_VALIDATION_RULES } from '@/types/subject';
+import { Subject, SubjectFile, DEFAULT_FILE_VALIDATION_RULES, FileValidationRules } from '@/types/subject';
 import { uploadFile, getSubjectFiles, deleteFile } from '@/lib/storage';
+import { getFileValidationRules, createValidationRulesFromAdminConfig } from '@/lib/adminConfig';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SubjectFilesModalProps {
@@ -28,13 +29,27 @@ export default function SubjectFilesModal({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [fileValidationRules, setFileValidationRules] = useState<FileValidationRules>(DEFAULT_FILE_VALIDATION_RULES);
 
-  // Load files when modal opens
+  // Load files and validation rules when modal opens
   useEffect(() => {
     if (isOpen && user?.userId) {
       loadFiles();
+      loadFileValidationRules();
     }
   }, [isOpen, user?.userId, subject.id]);
+
+  const loadFileValidationRules = async () => {
+    try {
+      const adminConfig = await getFileValidationRules();
+      const validationRules = createValidationRulesFromAdminConfig(adminConfig);
+      setFileValidationRules(validationRules);
+    } catch (error) {
+      console.error('Failed to load file validation rules:', error);
+      // Fall back to default rules
+      setFileValidationRules(DEFAULT_FILE_VALIDATION_RULES);
+    }
+  };
 
   const loadFiles = async () => {
     if (!user?.userId) return;
@@ -143,6 +158,7 @@ setError('Failed to delete file. Please try again.');
             onFilesSelected={handleFilesSelected}
             currentFileCount={fileCount}
             disabled={isUploading}
+            validationRules={fileValidationRules}
             dragActiveText="Drop files to upload"
             dragInactiveText="Add more files to this subject"
           />
