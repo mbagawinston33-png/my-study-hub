@@ -12,6 +12,7 @@ interface ReminderCardProps {
   onDelete?: (reminderId: string) => void;
   showActions?: boolean;
   compact?: boolean;
+  highlighted?: boolean;
 }
 
 export default function ReminderCard({
@@ -19,7 +20,8 @@ export default function ReminderCard({
   onUpdate,
   onDelete,
   showActions = true,
-  compact = false
+  compact = false,
+  highlighted = false
 }: ReminderCardProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -132,10 +134,11 @@ export default function ReminderCard({
   const cardStyle = {
     padding: compact ? '12px' : '16px',
     borderRadius: '12px',
-    border: `1px solid ${reminder.isCompleted ? 'var(--border)' : urgencyIndicator ? urgencyIndicator.color : 'var(--border)'}`,
-    background: reminder.isCompleted ? 'var(--bg-secondary)' : urgencyIndicator && urgencyIndicator.color === 'var(--danger)' ? 'var(--danger-50)' : 'var(--bg)',
+    border: highlighted ? '2px solid var(--brand)' : `1px solid ${reminder.isCompleted ? 'var(--border)' : urgencyIndicator ? urgencyIndicator.color : 'var(--border)'}`,
+    background: highlighted ? 'var(--brand-50)' : reminder.isCompleted ? 'var(--bg-secondary)' : urgencyIndicator && urgencyIndicator.color === 'var(--danger)' ? 'var(--danger-50)' : 'var(--bg)',
     opacity: reminder.isCompleted ? 0.7 : 1,
-    transition: 'all 0.2s ease'
+    transition: 'all 0.2s ease',
+    boxShadow: highlighted ? '0 0 0 2px var(--brand-200)' : 'none'
   };
 
   return (

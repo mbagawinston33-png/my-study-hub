@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Subject, SubjectWithFileCount } from "@/types/subject";
@@ -55,6 +55,7 @@ export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<SubjectWithFileCount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [highlightedSubjectId, setHighlightedSubjectId] = useState<string | null>(null);
 
   // Modal state
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
@@ -77,6 +78,31 @@ export default function SubjectsPage() {
     // Load subjects from Firebase
     refreshSubjects();
   }, [user]);
+
+  // Handle URL parameters for highlighting
+  useEffect(() => {
+    if (typeof window !== 'undefined' && subjects.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const highlightId = urlParams.get('highlight');
+
+      if (highlightId) {
+        setHighlightedSubjectId(highlightId);
+        // Clear the URL parameter after processing
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [subjects.length]); // Dependency on subjects length to ensure subjects are loaded
+
+  // Scroll to highlighted subject
+  useEffect(() => {
+    if (highlightedSubjectId) {
+      const element = document.getElementById(`subject-${highlightedSubjectId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [highlightedSubjectId]);
 
   // Refresh when page becomes visible again (user navigates back from edit page)
   useEffect(() => {
@@ -264,9 +290,14 @@ export default function SubjectsPage() {
       ) : (
         <div style={{ display: 'grid', gap: '16px' }}>
           {filteredSubjects.map(subject => (
-            <div key={subject.id} className="card" style={{
+            <div key={subject.id} id={`subject-${subject.id}`} className="card" style={{
               borderLeft: `4px solid ${subject.color}`,
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              ...(subject.id === highlightedSubjectId && {
+                backgroundColor: 'var(--brand-50)',
+                borderColor: 'var(--brand)',
+                boxShadow: '0 0 0 2px var(--brand-200)'
+              })
             }}>
               <div className="row" style={{ alignItems: 'center', gap: '16px' }}>
                 {/* Subject Icon */}

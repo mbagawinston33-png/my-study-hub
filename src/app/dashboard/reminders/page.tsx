@@ -19,10 +19,26 @@ export default function RemindersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filter, setFilter] = useState<FilterType>('all');
   const [sort, setSort] = useState<SortType>('dueDate');
+  const [highlightedReminderId, setHighlightedReminderId] = useState<string | null>(null);
 
   useEffect(() => {
     loadReminders();
   }, []);
+
+  // Handle URL parameters for highlighting
+  useEffect(() => {
+    if (typeof window !== 'undefined' && reminders.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const highlightId = urlParams.get('highlight');
+
+      if (highlightId) {
+        setHighlightedReminderId(highlightId);
+        // Clear the URL parameter after processing
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [reminders.length]); // Dependency on reminders length to ensure reminders are loaded
 
   useEffect(() => {
     applyFiltersAndSort();
@@ -256,6 +272,7 @@ export default function RemindersPage() {
               reminder={reminder}
               onUpdate={handleReminderUpdate}
               onDelete={handleReminderDelete}
+              highlighted={reminder.id === highlightedReminderId}
             />
           ))}
         </div>
