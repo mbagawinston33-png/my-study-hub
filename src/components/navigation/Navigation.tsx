@@ -21,6 +21,7 @@ export default function Navigation() {
     { href: "/dashboard/tasks", label: "Tasks" },
     { href: "/dashboard/subjects", label: "Subjects" },
     { href: "/dashboard/reminders", label: "Reminders" },
+    { href: "/dashboard/timer", label: "Study Timer" },
     { href: "/dashboard/profile", label: "Profile" },
   ];
 

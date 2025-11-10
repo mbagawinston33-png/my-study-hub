@@ -7,6 +7,7 @@ import ReminderModal from "@/components/reminder/ReminderModal";
 import ReminderCard from "@/components/reminder/ReminderCard";
 import TaskCard from "@/components/task/TaskCard";
 import Calendar from "@/components/calendar/Calendar";
+import TimerWidget from "@/components/timer/TimerWidget";
 import { Reminder } from "@/types/reminder";
 import { Task, TaskWithSubject, TaskStats } from "@/types/task";
 import { getUpcomingReminders } from "@/lib/reminders";
@@ -197,6 +198,11 @@ export default function DashboardPage() {
             {taskStats.total > 0 ? Math.round((taskStats.completed / taskStats.total) * 100) : 0}% completion rate
           </div>
         </div>
+      </div>
+
+      {/* Timer Widget */}
+      <div style={{ marginBottom: '28px' }}>
+        <TimerWidget />
       </div>
 
       {/* Main Content Grid */}
