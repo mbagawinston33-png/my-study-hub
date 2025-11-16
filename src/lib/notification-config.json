@@ -1,0 +1,91 @@
+{
+  "reminders": {
+    "default": 30,
+    "timeFrames": [
+      {
+        "minMinutes": 0,
+        "maxMinutes": 10,
+        "notification": 2
+      },
+      {
+        "minMinutes": 10,
+        "maxHours": 0.5,
+        "notification": 5
+      },
+      {
+        "minHours": 0.5,
+        "maxHours": 2,
+        "notification": 15
+      },
+      {
+        "minHours": 2,
+        "maxHours": 6,
+        "notification": 30
+      },
+      {
+        "minHours": 6,
+        "maxHours": null,
+        "notification": 60
+      }
+    ]
+  },
+  "tasks": {
+    "high": {
+      "timeFrames": [
+        {
+          "minMinutes": 0,
+          "maxMinutes": 15,
+          "notification": 2
+        },
+        {
+          "minMinutes": 15,
+          "maxHours": 4,
+          "notification": 30
+        },
+        {
+          "minHours": 4,
+          "maxHours": null,
+          "notification": 1440
+        }
+      ]
+    },
+    "medium": {
+      "timeFrames": [
+        {
+          "minMinutes": 0,
+          "maxMinutes": 10,
+          "notification": 2
+        },
+        {
+          "minMinutes": 10,
+          "maxHours": 2,
+          "notification": 15
+        },
+        {
+          "minHours": 2,
+          "maxHours": null,
+          "notification": 720
+        }
+      ]
+    },
+    "low": {
+      "timeFrames": [
+        {
+          "minMinutes": 0,
+          "maxMinutes": 5,
+          "notification": 1
+        },
+        {
+          "minMinutes": 5,
+          "maxHours": 1,
+          "notification": 10
+        },
+        {
+          "minHours": 1,
+          "maxHours": null,
+          "notification": 360
+        }
+      ]
+    }
+  }
+}

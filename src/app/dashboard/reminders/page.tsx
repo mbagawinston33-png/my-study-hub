@@ -7,12 +7,14 @@ import ReminderCard from '@/components/reminder/ReminderCard';
 import { Reminder } from '@/types/reminder';
 import { getUserReminders } from '@/lib/reminders';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 type FilterType = 'all' | 'pending' | 'completed' | 'overdue';
 type SortType = 'dueDate' | 'created';
 
 export default function RemindersPage() {
   const { user } = useAuth();
+  const { setUpcomingReminders } = useNotifications();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [filteredReminders, setFilteredReminders] = useState<Reminder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,6 +53,12 @@ export default function RemindersPage() {
     try {
       const userReminders = await getUserReminders(user.userId);
       setReminders(userReminders);
+      // Sync with global notification context (only upcoming reminders)
+      const upcomingReminders = userReminders
+        .filter(reminder => !reminder.isCompleted)
+        .sort((a, b) => a.dueDate.toDate().getTime() - b.dueDate.toDate().getTime())
+        .slice(0, 10); // Limit to 10 for performance
+      setUpcomingReminders(upcomingReminders);
     } catch (error) {
 } finally {
       setIsLoading(false);
@@ -91,10 +99,22 @@ export default function RemindersPage() {
 
   const handleReminderUpdate = (updatedReminder: Reminder) => {
     setReminders(prev => prev.map(r => r.id === updatedReminder.id ? updatedReminder : r));
+
+    // Update global notification context
+    setUpcomingReminders(prev => {
+      const updated = prev.map(r => r.id === updatedReminder.id ? updatedReminder : r);
+      // Keep only upcoming reminders (not completed) and sort by due date
+      return updated
+        .filter(r => !r.isCompleted)
+        .sort((a, b) => a.dueDate.toDate().getTime() - b.dueDate.toDate().getTime());
+    });
   };
 
   const handleReminderDelete = (reminderId: string) => {
     setReminders(prev => prev.filter(r => r.id !== reminderId));
+
+    // Update global notification context
+    setUpcomingReminders(prev => prev.filter(r => r.id !== reminderId));
   };
 
   const getStats = () => {

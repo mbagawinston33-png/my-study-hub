@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { TaskFormData } from "@/types/task";
 import { createTask } from "@/lib/tasks";
 import { getUserSubjects } from "@/lib/storage";
@@ -13,6 +14,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 
 export default function NewTaskPage() {
   const { user, loading } = useAuth();
+  const { setUpcomingTasks } = useNotifications();
   const router = useRouter();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -71,6 +73,18 @@ export default function NewTaskPage() {
                     // Continue with task creation even if file upload fails
         }
       }
+
+      // Sync with global notification context (add new task to upcoming tasks)
+      if (!['completed', 'cancelled'].includes(newTask.status)) {
+        setUpcomingTasks(prev => {
+          const updated = [...prev, newTask];
+          // Sort by due date and limit to 10
+          return updated
+            .sort((a, b) => a.dueDate.toDate().getTime() - b.dueDate.toDate().getTime())
+            .slice(-10); // Keep the 10 most recent upcoming tasks
+        });
+      }
+
       router.push('/dashboard/tasks');
     } catch (error) {
             setError('Failed to create task. Please try again.');

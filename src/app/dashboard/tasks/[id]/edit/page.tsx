@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { Task, TaskFormData } from "@/types/task";
 import { getTaskById, updateTask } from "@/lib/tasks";
 import { getUserSubjects } from "@/lib/storage";
@@ -13,6 +14,7 @@ import { ArrowLeft, Edit } from "lucide-react";
 
 export default function EditTaskPage() {
   const { user } = useAuth();
+  const { setUpcomingTasks } = useNotifications();
   const router = useRouter();
   const params = useParams();
   const taskId = params.id as string;
@@ -81,6 +83,22 @@ if (error.message === 'Task not found' || error.message === 'Access denied') {
         } catch (fileError) {
                     // Continue with task update even if file upload fails
         }
+      }
+
+      // Sync with global notification context (update task in upcoming tasks)
+      const updatedTask = { ...task, ...data };
+      if (!['completed', 'cancelled'].includes(updatedTask.status)) {
+        setUpcomingTasks(prev => {
+          const updated = prev.map(t => t.id === taskId ? updatedTask : t);
+          // Remove completed/cancelled tasks and sort by due date
+          return updated
+            .filter(t => !['completed', 'cancelled'].includes(t.status))
+            .sort((a, b) => a.dueDate.toDate().getTime() - b.dueDate.toDate().getTime())
+            .slice(0, 10); // Limit to 10 for performance
+        });
+      } else {
+        // If task is completed/cancelled, remove from upcoming tasks
+        setUpcomingTasks(prev => prev.filter(t => t.id !== taskId));
       }
 
             router.push('/dashboard/tasks');

@@ -41,7 +41,7 @@ export default function DashboardPage() {
       await logout();
       router.push("/login");
     } catch (error) {
-    }
+}
   };
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function DashboardPage() {
       setLocalUpcomingReminders(limitedReminders);
       setGlobalReminders(limitedReminders); // Update global context for notifications
     } catch (error) {
-    } finally {
+} finally {
       setIsLoadingReminders(false);
     }
   };
@@ -90,7 +90,7 @@ export default function DashboardPage() {
       setLocalUpcomingTasks(tasksWithSubjects);
       setGlobalTasks(tasksWithSubjects); // Update global context for notifications
     } catch (error) {
-    } finally {
+} finally {
       setIsLoadingTasks(false);
     }
   };
@@ -102,7 +102,7 @@ export default function DashboardPage() {
       const stats = await getTaskStats(user.userId);
       setTaskStats(stats);
     } catch (error) {
-    }
+}
   };
 
   const loadUserData = async () => {
@@ -118,7 +118,7 @@ export default function DashboardPage() {
       setSubjects(userSubjects);
       setRecentFileCount(storageUsage > 0 ? 1 : 0); // Simplified - just show if any files exist
     } catch (error) {
-    } finally {
+} finally {
       setIsLoadingData(false);
     }
   };
@@ -167,15 +167,313 @@ export default function DashboardPage() {
       // Update stats
       loadTaskStats();
     } catch (error) {
-    }
+}
   };
 
   const handleTaskClick = (taskId: string) => {
     router.push(`/dashboard/tasks?highlight=${taskId}`);
   };
 
+  // Get notification timing based on config
+  const getNotificationTiming = (item: Task | Reminder) => {
+    const now = new Date();
+    const dueDate = item.dueDate.toDate();
+    const minutesUntilDue = (dueDate.getTime() - now.getTime()) / (1000 * 60);
+    const hoursUntilDue = minutesUntilDue / 60;
+
+    // Check if it's a task
+    if ('priority' in item) {
+      const task = item as Task;
+      const priorityConfig = notificationConfig.tasks[task.priority];
+
+      if (!priorityConfig) return null;
+
+      for (const timeFrame of priorityConfig.timeFrames) {
+        const minMinutes = timeFrame.minMinutes || (timeFrame.minHours ? timeFrame.minHours * 60 : 0);
+        const maxMinutes = timeFrame.maxMinutes || (timeFrame.maxHours ? timeFrame.maxHours * 60 : Infinity);
+
+        if (minutesUntilDue >= minMinutes && minutesUntilDue < maxMinutes) {
+          return timeFrame.notification; // minutes before due date
+        }
+      }
+
+      return priorityConfig.default || notificationConfig.tasks.default || 30;
+    }
+    // It's a reminder
+    else {
+      const reminder = item as Reminder;
+      const reminderConfig = notificationConfig.reminders;
+
+      for (const timeFrame of reminderConfig.timeFrames) {
+        const minMinutes = timeFrame.minMinutes || (timeFrame.minHours ? timeFrame.minHours * 60 : 0);
+        const maxMinutes = timeFrame.maxMinutes || (timeFrame.maxHours ? timeFrame.maxHours * 60 : Infinity);
+
+        if (minutesUntilDue >= minMinutes && minutesUntilDue < maxMinutes) {
+          return timeFrame.notification; // minutes before due date
+        }
+      }
+
+      return reminderConfig.default || 30;
+    }
+  };
+
+  // Check and send notifications
+  const checkAndSendNotifications = () => {
+    console.log('🔔 Notification check started');
+
+    if (!('Notification' in window)) {
+      console.log('❌ Notifications not supported');
+      return;
+    }
+
+    console.log('📋 Notification permission:', Notification.permission);
+
+    if (Notification.permission !== 'granted') {
+      console.log('❌ Notification permission not granted');
+      return;
+    }
+
+    const now = new Date();
+    console.log('⏰ Current time:', now.toLocaleTimeString());
+
+    // Check reminders
+    console.log('📅 Checking reminders:', upcomingReminders.length);
+    upcomingReminders.forEach((reminder, index) => {
+      const notificationTiming = getNotificationTiming(reminder);
+      console.log(`📝 Reminder ${index + 1}: "${reminder.title}"`);
+      console.log(`   Due: ${reminder.dueDate.toDate().toLocaleTimeString()}`);
+      console.log(`   Notification timing: ${notificationTiming} minutes before`);
+
+      if (!notificationTiming) {
+        console.log('   ❌ No notification timing found');
+        return;
+      }
+
+      const dueDate = reminder.dueDate.toDate();
+      const notificationTime = new Date(dueDate.getTime() - notificationTiming * 60000);
+      const notificationKey = `reminder-${reminder.id}`;
+      const minutesUntilDue = (dueDate.getTime() - now.getTime()) / (1000 * 60);
+      const minutesUntilNotification = (notificationTime.getTime() - now.getTime()) / (1000 * 60);
+
+      console.log(`   Minutes until due: ${minutesUntilDue.toFixed(1)}`);
+      console.log(`   Minutes until notification: ${minutesUntilNotification.toFixed(1)}`);
+      console.log(`   Notification time: ${notificationTime.toLocaleTimeString()}`);
+      console.log(`   Already sent: ${sentNotifications.has(notificationKey)}`);
+
+      // Check if we should send notification now (within 1 minute window)
+      const timeDiff = Math.abs(now.getTime() - notificationTime.getTime());
+      console.log(`   Time diff from notification time: ${timeDiff / 1000} seconds`);
+
+      // Check if we're in the notification window
+      const isInNotificationWindow = timeDiff < 60000;
+
+      // Clean up expired sent notifications (if time window has passed)
+      if (timeDiff > 60000 && sentNotifications.has(notificationKey)) {
+        console.log('🧹 Cleaning up expired notification tracking');
+        setSentNotifications(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(notificationKey);
+          return newSet;
+        });
+      }
+
+      if (isInNotificationWindow && !sentNotifications.has(notificationKey)) {
+        console.log('🚨 SENDING NOTIFICATION!');
+
+        // Always show toast notification
+        setToastNotification({
+          id: notificationKey,
+          title: 'Reminder Due Soon!',
+          body: `${reminder.title} is due in ${notificationTiming} minute${notificationTiming !== 1 ? 's' : ''}`,
+          timestamp: Date.now()
+        });
+
+        // Try browser notification as well
+        try {
+          new Notification('Reminder Due Soon!', {
+            body: `${reminder.title} is due in ${notificationTiming} minute${notificationTiming !== 1 ? 's' : ''}`,
+            icon: '/favicon.ico',
+            tag: notificationKey
+          });
+          console.log('✅ Browser notification sent successfully');
+        } catch (error) {
+          console.error('❌ Browser notification failed:', error);
+          console.log('🍞 Toast notification displayed as fallback');
+        }
+
+        setSentNotifications(prev => new Set([...prev, notificationKey]));
+      } else {
+        if (!isInNotificationWindow) {
+          console.log('   ⏰ Not in notification window yet');
+        } else {
+          console.log('   🔔 Already sent in this window');
+        }
+      }
+    });
+
+    // Check tasks
+    console.log('🎯 Checking tasks:', upcomingTasks.length);
+    upcomingTasks.forEach((task, index) => {
+      const notificationTiming = getNotificationTiming(task);
+      console.log(`📋 Task ${index + 1}: "${task.title}" (${task.priority})`);
+      console.log(`   Due: ${task.dueDate.toDate().toLocaleTimeString()}`);
+      console.log(`   Notification timing: ${notificationTiming} minutes before`);
+
+      if (!notificationTiming) {
+        console.log('   ❌ No notification timing found');
+        return;
+      }
+
+      const dueDate = task.dueDate.toDate();
+      const notificationTime = new Date(dueDate.getTime() - notificationTiming * 60000);
+      const notificationKey = `task-${task.id}`;
+      const minutesUntilDue = (dueDate.getTime() - now.getTime()) / (1000 * 60);
+      const minutesUntilNotification = (notificationTime.getTime() - now.getTime()) / (1000 * 60);
+
+      console.log(`   Minutes until due: ${minutesUntilDue.toFixed(1)}`);
+      console.log(`   Minutes until notification: ${minutesUntilNotification.toFixed(1)}`);
+      console.log(`   Notification time: ${notificationTime.toLocaleTimeString()}`);
+      console.log(`   Already sent: ${sentNotifications.has(notificationKey)}`);
+
+      // Check if we should send notification now (within 1 minute window)
+      const timeDiff = Math.abs(now.getTime() - notificationTime.getTime());
+      console.log(`   Time diff from notification time: ${timeDiff / 1000} seconds`);
+
+      if (timeDiff < 60000 && !sentNotifications.has(notificationKey)) {
+        const priority = task.priority.toUpperCase();
+        const timeMessage = notificationTiming >= 60
+          ? `${notificationTiming / 60} hour${notificationTiming / 60 !== 1 ? 's' : ''}`
+          : `${notificationTiming} minute${notificationTiming !== 1 ? 's' : ''}`;
+
+        console.log('🚨 SENDING TASK NOTIFICATION!');
+
+        // Always show toast notification
+        setToastNotification({
+          id: notificationKey,
+          title: `${priority} Priority Task Due Soon!`,
+          body: `${task.title} is due in ${timeMessage}`,
+          timestamp: Date.now()
+        });
+
+        // Try browser notification as well
+        try {
+          new Notification(`${priority} Priority Task Due Soon!`, {
+            body: `${task.title} is due in ${timeMessage}`,
+            icon: '/favicon.ico',
+            tag: notificationKey
+          });
+          console.log('✅ Task browser notification sent successfully');
+        } catch (error) {
+          console.error('❌ Task browser notification failed:', error);
+          console.log('🍞 Toast notification displayed as fallback');
+        }
+
+        setSentNotifications(prev => new Set([...prev, notificationKey]));
+      } else {
+        console.log('   ⏳ Not time to notify yet');
+      }
+    });
+
+    console.log('🔔 Notification check completed');
+  };
+
+  // Setup notification system
+  useEffect(() => {
+    console.log('🚀 Dashboard component mounted - setting up notifications');
+
+    // Request notification permission
+    if ('Notification' in window) {
+      console.log('📱 Browser supports notifications');
+      if (Notification.permission === 'default') {
+        console.log('🔔 Requesting notification permission...');
+        Notification.requestPermission().then(permission => {
+          console.log('✅ Permission result:', permission);
+        });
+      } else {
+        console.log('📋 Current permission:', Notification.permission);
+      }
+    } else {
+      console.log('❌ Browser does not support notifications');
+    }
+
+    // Run notification check immediately for testing
+    console.log('⚡ Running immediate notification check...');
+    checkAndSendNotifications();
+
+    // Check for notifications every 10 seconds for testing (instead of 1 minute)
+    console.log('⏰ Setting up notification interval (every 10 seconds for testing)');
+    const notificationInterval = setInterval(() => {
+      console.log('⏱️ Interval triggered - checking notifications...');
+      checkAndSendNotifications();
+    }, 10000); // 10 seconds instead of 60 for faster testing
+
+    return () => {
+      console.log('🧹 Cleaning up notification interval');
+      clearInterval(notificationInterval);
+    };
+  }, [upcomingReminders, upcomingTasks, sentNotifications]);
+
+  // Auto-hide toast after 5 seconds
+  useEffect(() => {
+    if (toastNotification) {
+      const timer = setTimeout(() => {
+        setToastNotification(null);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [toastNotification]);
+
   return (
     <div>
+      {/* Toast Notification */}
+      {toastNotification && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          background: 'var(--brand)',
+          color: 'white',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          zIndex: 1000,
+          maxWidth: '350px',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          <div style={{ fontWeight: '600', marginBottom: '4px', fontSize: '16px' }}>
+            {toastNotification.title}
+          </div>
+          <div style={{ fontSize: '14px', opacity: 0.9 }}>
+            {toastNotification.body}
+          </div>
+          <button
+            onClick={() => setToastNotification(null)}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: 'none',
+              border: 'none',
+              color: 'white',
+              fontSize: '18px',
+              cursor: 'pointer',
+              padding: '4px',
+              borderRadius: '4px'
+            }}
+          >
+            ×
+          </button>
+          {/* Auto-hide after 5 seconds */}
+          <style jsx>{`
+            @keyframes slideIn {
+              from { transform: translateX(100%); opacity: 0; }
+              to { transform: translateX(0); opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
+
       {/* Welcome Section */}
       <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: 'var(--fs-hero)', margin: '0 0 8px', color: 'var(--text)' }}>
@@ -331,7 +629,7 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {upcomingReminders.slice(0, 3).map((reminder) => (
                 <div key={reminder.id} className="row" style={{ gap: '10px' }}>
-                  <div style={{ flex: 1 }}>
+                                    <div style={{ flex: 1 }}>
                     <b style={{ color: 'var(--text)' }}>{reminder.title}</b>
                     <div className="small">
                       Due {reminder.dueDate.toDate().toLocaleDateString()} • {reminder.dueDate.toDate().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}

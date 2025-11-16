@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { Task, TaskWithSubject, TaskFilter, TaskStats } from "@/types/task";
 import {
   getUserTasks,
@@ -53,6 +54,7 @@ const FILTER_OPTIONS: { value: TaskFilter; label: string; icon: React.ReactNode 
 
 export default function TasksPage() {
   const { user } = useAuth();
+  const { setUpcomingTasks } = useNotifications();
   const router = useRouter();
 
   const [tasks, setTasks] = useState<TaskWithSubject[]>([]);
@@ -97,6 +99,13 @@ export default function TasksPage() {
       setTasks(tasksWithSubjects);
       setSubjects(userSubjects);
       setStats(taskStats);
+
+      // Sync with global notification context (only upcoming tasks)
+      const upcomingTasks = tasksWithSubjects
+        .filter(task => !['completed', 'cancelled'].includes(task.status))
+        .sort((a, b) => a.dueDate.toDate().getTime() - b.dueDate.toDate().getTime())
+        .slice(0, 10); // Limit to 10 for performance
+      setUpcomingTasks(upcomingTasks);
     } catch (error) {
 } finally {
       setIsLoading(false);
@@ -127,7 +136,7 @@ export default function TasksPage() {
 
     try {
       const updatedTask = await toggleTaskCompletion(user.userId, taskId);
-      setTasks(prev =>
+      const updatedTasks = setTasks(prev =>
         prev.map(task =>
           task.id === taskId
             ? {
@@ -137,6 +146,20 @@ export default function TasksPage() {
             : task
         )
       );
+
+      // Update global notification context
+      setUpcomingTasks(prev => {
+        const updated = prev.map(task =>
+          task.id === taskId
+            ? {
+                ...task,
+                status: updatedTask.status
+              }
+            : task
+        );
+        // Remove completed/cancelled tasks from upcoming tasks
+        return updated.filter(task => !['completed', 'cancelled'].includes(task.status));
+      });
 
       // Update stats
       const newStats = await getTaskStats(user.userId);
@@ -152,6 +175,9 @@ export default function TasksPage() {
     try {
       await deleteTask(user.userId, taskId);
       setTasks(prev => prev.filter(task => task.id !== taskId));
+
+      // Update global notification context
+      setUpcomingTasks(prev => prev.filter(task => task.id !== taskId));
 
       // Update stats
       const newStats = await getTaskStats(user.userId);
