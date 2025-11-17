@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Task, Reminder } from '@/types/task';
+import { Task } from '@/types/task';
+import { Reminder } from '@/types/reminder';
 import notificationConfig from '@/lib/notification-config.json';
 
 interface ToastNotification {
@@ -16,9 +17,9 @@ interface NotificationContextType {
   addToastNotification: (notification: ToastNotification) => void;
   removeToastNotification: (id: string) => void;
   upcomingTasks: Task[];
-  setUpcomingTasks: (tasks: Task[]) => void;
+  setUpcomingTasks: (tasks: Task[] | ((prev: Task[]) => Task[])) => void;
   upcomingReminders: Reminder[];
-  setUpcomingReminders: (reminders: Reminder[]) => void;
+  setUpcomingReminders: (reminders: Reminder[] | ((prev: Reminder[]) => Reminder[])) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -64,7 +65,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         }
       }
 
-      return priorityConfig.default || notificationConfig.tasks.default || 30;
+      // Return the last timeFrame notification as fallback, or default 30 minutes
+      return priorityConfig.timeFrames[priorityConfig.timeFrames.length - 1]?.notification || 30;
     }
     // It's a reminder
     else {

@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { Task, TaskFormData } from "@/types/task";
+import { Timestamp } from "firebase/firestore";
 import { getTaskById, updateTask } from "@/lib/tasks";
 import { getUserSubjects } from "@/lib/storage";
 import { uploadTaskFiles, updateTaskAttachedFiles } from "@/lib/taskFiles";
@@ -86,10 +87,20 @@ if (error.message === 'Task not found' || error.message === 'Access denied') {
       }
 
       // Sync with global notification context (update task in upcoming tasks)
-      const updatedTask = { ...task, ...data };
-      if (!['completed', 'cancelled'].includes(updatedTask.status)) {
+      // Create a properly typed updated task for the notification context
+      const updatedTaskForNotification: Task = {
+        ...task,
+        title: data.title || task.title,
+        description: data.description || task.description,
+        dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : task.dueDate,
+        priority: data.priority || task.priority,
+        subjectId: data.subjectId || task.subjectId,
+        updatedAt: Timestamp.now()
+      };
+
+      if (!['completed', 'cancelled'].includes(updatedTaskForNotification.status)) {
         setUpcomingTasks(prev => {
-          const updated = prev.map(t => t.id === taskId ? updatedTask : t);
+          const updated = prev.map(t => t.id === taskId ? updatedTaskForNotification : t);
           // Remove completed/cancelled tasks and sort by due date
           return updated
             .filter(t => !['completed', 'cancelled'].includes(t.status))
