@@ -88,16 +88,18 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   // Check and send notifications
   const checkAndSendNotifications = () => {
-    console.log('🔔 Global notification check started');
+    // Always process toast notifications (they work everywhere)
+    const canSendBrowserNotifications =
+      'Notification' in window &&
+      Notification.permission === 'granted' &&
+      (location.protocol === 'https:' ||
+       location.hostname === 'localhost' ||
+       location.hostname === '127.0.0.1');
 
-    if (!('Notification' in window)) {
-      console.log('❌ Notifications not supported');
-      return;
-    }
-
-    if (Notification.permission !== 'granted') {
-      console.log('❌ Notification permission not granted');
-      return;
+    if (!canSendBrowserNotifications) {
+      console.log('🔔 Browser notifications not available, using toast only');
+    } else {
+      console.log('🔔 Browser notifications enabled, using both toast + browser');
     }
 
     const now = new Date();
@@ -148,17 +150,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           timestamp: Date.now()
         });
 
-        // Try browser notification as well
-        try {
-          new Notification('Reminder Due Soon!', {
-            body: `${reminder.title} is due in ${notificationTiming} minute${notificationTiming !== 1 ? 's' : ''}`,
-            icon: '/favicon.ico',
-            tag: notificationKey
-          });
-          console.log('✅ Browser notification sent successfully');
-        } catch (error) {
-          console.error('❌ Browser notification failed:', error);
-          console.log('🍞 Toast notification displayed as fallback');
+        // Send browser notification only if available
+        if (canSendBrowserNotifications) {
+          try {
+            new Notification('Reminder Due Soon!', {
+              body: `${reminder.title} is due in ${notificationTiming} minute${notificationTiming !== 1 ? 's' : ''}`,
+              icon: '/favicon.ico',
+              tag: notificationKey
+            });
+            console.log('✅ Browser notification sent successfully');
+          } catch (error) {
+            console.error('❌ Browser notification failed:', error);
+          }
+        } else {
+          console.log('🍞 Toast notification only (browser notifications not available)');
         }
 
         setSentNotifications(prev => new Set([...prev, notificationKey]));
@@ -221,17 +226,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           timestamp: Date.now()
         });
 
-        // Try browser notification as well
-        try {
-          new Notification(`${priority} Priority Task Due Soon!`, {
-            body: `${task.title} is due in ${timeMessage}`,
-            icon: '/favicon.ico',
-            tag: notificationKey
-          });
-          console.log('✅ Task browser notification sent successfully');
-        } catch (error) {
-          console.error('❌ Task browser notification failed:', error);
-          console.log('🍞 Toast notification displayed as fallback');
+        // Send browser notification only if available
+        if (canSendBrowserNotifications) {
+          try {
+            new Notification(`${priority} Priority Task Due Soon!`, {
+              body: `${task.title} is due in ${timeMessage}`,
+              icon: '/favicon.ico',
+              tag: notificationKey
+            });
+            console.log('✅ Task browser notification sent successfully');
+          } catch (error) {
+            console.error('❌ Task browser notification failed:', error);
+          }
+        } else {
+          console.log('🍞 Task toast notification only (browser notifications not available)');
         }
 
         setSentNotifications(prev => new Set([...prev, notificationKey]));

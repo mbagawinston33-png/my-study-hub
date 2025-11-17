@@ -9,6 +9,7 @@ import ReminderCard from "@/components/reminder/ReminderCard";
 import TaskCard from "@/components/task/TaskCard";
 import Calendar from "@/components/calendar/Calendar";
 import TimerWidget from "@/components/timer/TimerWidget";
+import NotificationPermissionBanner from "@/components/ui/NotificationPermissionBanner";
 import { Reminder } from "@/types/reminder";
 import { Task, TaskWithSubject, TaskStats } from "@/types/task";
 import { getUpcomingReminders } from "@/lib/reminders";
@@ -224,6 +225,9 @@ export default function DashboardPage() {
       <div style={{ marginBottom: '28px' }}>
         <TimerWidget />
       </div>
+
+      {/* Notification Permission Banner */}
+      <NotificationPermissionBanner />
 
       {/* Main Content Grid */}
       <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(12, 1fr)' }}>
