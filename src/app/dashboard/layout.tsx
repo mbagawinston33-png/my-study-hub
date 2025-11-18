@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Navigation from "@/components/navigation/Navigation";
 import SearchModal from "@/components/search/SearchModal";
+import NotificationBell from "@/components/notification/NotificationBell";
+import NotificationCenter from "@/components/notification/NotificationCenter";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function DashboardLayout({
@@ -13,6 +15,7 @@ export default function DashboardLayout({
 }) {
   const { user } = useAuth();
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
 
   // Keyboard shortcut for search (Ctrl+/)
   useEffect(() => {
@@ -35,6 +38,14 @@ export default function DashboardLayout({
 
   const handleSearchClose = () => {
     setIsSearchModalOpen(false);
+  };
+
+  const handleNotificationClick = () => {
+    setIsNotificationCenterOpen(true);
+  };
+
+  const handleNotificationClose = () => {
+    setIsNotificationCenterOpen(false);
   };
 
   return (
@@ -84,6 +95,9 @@ export default function DashboardLayout({
                   Search
                 </button>
 
+                {/* Notification Bell */}
+                <NotificationBell onClick={handleNotificationClick} />
+
                 {/* Navigation */}
                 <Navigation />
               </div>
@@ -104,6 +118,14 @@ export default function DashboardLayout({
             isOpen={isSearchModalOpen}
             onClose={handleSearchClose}
             userId={user.userId}
+          />
+        )}
+
+        {/* Notification Center */}
+        {user && (
+          <NotificationCenter
+            isOpen={isNotificationCenterOpen}
+            onClose={handleNotificationClose}
           />
         )}
       </div>

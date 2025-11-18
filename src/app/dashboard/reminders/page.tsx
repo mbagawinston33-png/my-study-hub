@@ -5,7 +5,7 @@ import { Plus, Filter, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import ReminderModal from '@/components/reminder/ReminderModal';
 import ReminderCard from '@/components/reminder/ReminderCard';
 import { Reminder } from '@/types/reminder';
-import { getUserReminders } from '@/lib/reminders';
+import { getUserReminders, getUpcomingReminders } from '@/lib/reminders';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 
@@ -49,18 +49,21 @@ export default function RemindersPage() {
   const loadReminders = async () => {
     if (!user) return;
 
+    console.log('🔄 Loading reminders for user:', user.userId);
     setIsLoading(true);
     try {
+      // Load all reminders for the page display
       const userReminders = await getUserReminders(user.userId);
+      console.log('📥 Retrieved all reminders from Firestore:', userReminders.length);
       setReminders(userReminders);
-      // Sync with global notification context (only upcoming reminders)
-      const upcomingReminders = userReminders
-        .filter(reminder => !reminder.isCompleted)
-        .sort((a, b) => a.dueDate.toDate().getTime() - b.dueDate.toDate().getTime())
-        .slice(0, 10); // Limit to 10 for performance
+
+      // Load only upcoming reminders for global notification context (same as dashboard)
+      const upcomingReminders = await getUpcomingReminders(user.userId);
+      console.log('📤 Updating global upcoming reminders:', upcomingReminders.length);
       setUpcomingReminders(upcomingReminders);
     } catch (error) {
-} finally {
+      console.error('❌ Error loading reminders:', error);
+    } finally {
       setIsLoading(false);
     }
   };

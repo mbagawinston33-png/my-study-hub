@@ -3,6 +3,22 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task } from '@/types/task';
 import { Reminder } from '@/types/reminder';
+import {
+  PersistentNotification,
+  LocalNotification,
+  CreateNotificationData,
+  createTaskNotification,
+  createReminderNotification
+} from '@/types/notification';
+import {
+  createNotification,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  listenToUserNotifications,
+  listenToUnreadCount,
+  cleanupOldNotifications as cleanupOldNotificationsService
+} from '@/lib/notificationServices';
+import { useAuth } from './AuthContext';
 import notificationConfig from '@/lib/notification-config.json';
 
 interface ToastNotification {
@@ -13,6 +29,7 @@ interface ToastNotification {
 }
 
 interface NotificationContextType {
+  // Existing toast functionality
   toastNotifications: ToastNotification[];
   addToastNotification: (notification: ToastNotification) => void;
   removeToastNotification: (id: string) => void;
@@ -20,6 +37,16 @@ interface NotificationContextType {
   setUpcomingTasks: (tasks: Task[] | ((prev: Task[]) => Task[])) => void;
   upcomingReminders: Reminder[];
   setUpcomingReminders: (reminders: Reminder[] | ((prev: Reminder[]) => Reminder[])) => void;
+
+  // New persistent notification functionality
+  notifications: PersistentNotification[];
+  unreadCount: number;
+  isLoadingNotifications: boolean;
+  refreshNotifications: () => Promise<void>;
+  markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  createPersistentNotification: (data: CreateNotificationData) => Promise<void>;
+  cleanupOldNotifications: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -37,10 +64,31 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
+  const { user } = useAuth();
   const [sentNotifications, setSentNotifications] = useState<Set<string>>(new Set());
   const [toastNotifications, setToastNotifications] = useState<ToastNotification[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
   const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
+
+  // Wrapper function to update upcoming reminders and trigger immediate notification check
+  const updateUpcomingReminders = (reminders: Reminder[] | ((prev: Reminder[]) => Reminder[])) => {
+    console.log('📝 updateUpcomingReminders called');
+    setUpcomingReminders(prev => {
+      const newReminders = typeof reminders === 'function' ? reminders(prev) : reminders;
+      console.log('📝 Updating reminders from', prev.length, 'to', newReminders.length);
+      // Trigger immediate notification check after a brief delay to ensure state is updated
+      setTimeout(() => {
+        console.log('⚡ Triggering immediate notification check');
+        checkAndSendNotificationsEnhanced();
+      }, 100);
+      return newReminders;
+    });
+  };
+
+  // New persistent notification states
+  const [notifications, setNotifications] = useState<PersistentNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState<boolean>(false);
 
   // Get notification timing based on config
   const getNotificationTiming = (item: Task | Reminder) => {
@@ -255,42 +303,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     console.log('🔔 Global notification check completed');
   };
 
-  // Setup global notification system
-  useEffect(() => {
-    console.log('🚀 Global notification system starting...');
-
-    // Request notification permission
-    if ('Notification' in window) {
-      console.log('📱 Browser supports notifications');
-      if (Notification.permission === 'default') {
-        console.log('🔔 Requesting notification permission...');
-        Notification.requestPermission().then(permission => {
-          console.log('✅ Permission result:', permission);
-        });
-      } else {
-        console.log('📋 Current permission:', Notification.permission);
-      }
-    } else {
-      console.log('❌ Browser does not support notifications');
-    }
-
-    // Run notification check immediately
-    console.log('⚡ Running immediate global notification check...');
-    checkAndSendNotifications();
-
-    // Check for notifications every 10 seconds for testing (change back to 60000 for production)
-    console.log('⏰ Setting up global notification interval (every 10 seconds for testing)');
-    const notificationInterval = setInterval(() => {
-      console.log('⏱️ Global interval triggered - checking notifications...');
-      checkAndSendNotifications();
-    }, 10000); // 10 seconds for testing, change to 60000 for production
-
-    return () => {
-      console.log('🧹 Cleaning up global notification interval');
-      clearInterval(notificationInterval);
-    };
-  }, [upcomingTasks, upcomingReminders, sentNotifications]);
-
+  
   // Add multiple toast notifications
   const addToastNotification = (notification: ToastNotification) => {
     setToastNotifications(prev => [...prev, notification]);
@@ -304,14 +317,309 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Note: Toast now stays on screen until manually closed
   // Auto-hide functionality removed to keep notification visible
 
+  // New persistent notification functions
+  const createPersistentNotification = async (data: CreateNotificationData) => {
+    if (!user) return;
+
+    try {
+      // Create persistent notification in Firestore
+      await createNotification(data);
+
+      // Also create toast notification for immediate feedback
+      addToastNotification({
+        id: `persistent-${Date.now()}`,
+        title: data.title,
+        body: data.message,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error('Error creating persistent notification:', error);
+    }
+  };
+
+  const markAsRead = async (notificationId: string) => {
+    try {
+      await markNotificationAsRead(notificationId);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!user) return;
+
+    try {
+      await markAllNotificationsAsRead(user.userId);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  const cleanupOldNotifications = async () => {
+    if (!user) return;
+
+    try {
+      await cleanupOldNotificationsService(user.userId);
+    } catch (error) {
+      console.error('Error cleaning up old notifications:', error);
+    }
+  };
+
+  const refreshNotifications = async () => {
+    if (!user) return;
+
+    setIsLoadingNotifications(true);
+    try {
+      // Trigger a refresh by creating a temporary notification
+      // The real-time listener will handle the actual data refresh
+      console.log('Refreshing notifications...');
+    } catch (error) {
+      console.error('Error refreshing notifications:', error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  };
+
+  // Setup real-time listeners for persistent notifications
+  useEffect(() => {
+    if (!user) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    let unsubscribeNotifications: (() => void) | undefined;
+    let unsubscribeUnreadCount: (() => void) | undefined;
+
+    const setupListeners = () => {
+      // Listen to user notifications
+      unsubscribeNotifications = listenToUserNotifications(
+        user.userId,
+        (notificationList) => {
+          console.log('📬 Real-time notifications updated:', notificationList.length);
+          setNotifications(notificationList);
+        },
+        { readStatus: 'all' } // Get all notifications, not just unread
+      );
+
+      // Listen to unread count
+      unsubscribeUnreadCount = listenToUnreadCount(
+        user.userId,
+        (count) => {
+          console.log('🔢 Unread count updated:', count);
+          setUnreadCount(count);
+        }
+      );
+    };
+
+    // Initial setup
+    setupListeners();
+
+    // Cleanup old notifications on mount
+    cleanupOldNotifications();
+
+    return () => {
+      if (unsubscribeNotifications) {
+        unsubscribeNotifications();
+      }
+      if (unsubscribeUnreadCount) {
+        unsubscribeUnreadCount();
+      }
+    };
+  }, [user]);
+
+  // Enhanced notification check with persistent storage
+  const checkAndSendNotificationsEnhanced = () => {
+    console.log('🔔 Checking notifications...', {
+      userId: user?.userId,
+      upcomingRemindersCount: upcomingReminders.length,
+      reminders: upcomingReminders.map(r => ({ id: r.id, title: r.title, dueDate: r.dueDate.toDate() }))
+    });
+
+    const canSendBrowserNotifications =
+      'Notification' in window &&
+      Notification.permission === 'granted' &&
+      (location.protocol === 'https:' ||
+       location.hostname === 'localhost' ||
+       location.hostname === '127.0.0.1');
+
+    if (!user) {
+      console.log('❌ No user found, skipping notification check');
+      return;
+    }
+
+    const now = new Date();
+
+    // Check reminders and create persistent notifications
+    upcomingReminders.forEach((reminder) => {
+      const notificationTiming = getNotificationTiming(reminder);
+
+      if (!notificationTiming) return;
+
+      const dueDate = reminder.dueDate.toDate();
+      const notificationTime = new Date(dueDate.getTime() - notificationTiming * 60000);
+      const notificationKey = `reminder-${reminder.id}`;
+      const timeDiff = Math.abs(now.getTime() - notificationTime.getTime());
+      const isInNotificationWindow = timeDiff < 60000;
+
+      if (isInNotificationWindow && !sentNotifications.has(notificationKey)) {
+        // Create persistent notification
+        const notificationData = createReminderNotification(
+          reminder,
+          'reminder_due',
+          user.userId
+        );
+
+        createPersistentNotification(notificationData);
+
+        // Show immediate toast notification
+        addToastNotification({
+          id: notificationKey,
+          title: 'Reminder Due Soon!',
+          body: `${reminder.title} is due in ${notificationTiming} minute${notificationTiming !== 1 ? 's' : ''}`,
+          timestamp: Date.now()
+        });
+
+        // Send browser notification
+        if (canSendBrowserNotifications) {
+          try {
+            new Notification('Reminder Due Soon!', {
+              body: `${reminder.title} is due in ${notificationTiming} minute${notificationTiming !== 1 ? 's' : ''}`,
+              icon: '/favicon.ico',
+              tag: notificationKey
+            });
+          } catch (error) {
+            console.error('Browser notification failed:', error);
+          }
+        }
+
+        setSentNotifications(prev => new Set([...prev, notificationKey]));
+      }
+
+      // Clean up expired sent notifications
+      if (timeDiff > 60000 && sentNotifications.has(notificationKey)) {
+        setSentNotifications(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(notificationKey);
+          return newSet;
+        });
+      }
+    });
+
+    // Check tasks and create persistent notifications
+    upcomingTasks.forEach((task) => {
+      const notificationTiming = getNotificationTiming(task);
+
+      if (!notificationTiming) return;
+
+      const dueDate = task.dueDate.toDate();
+      const notificationTime = new Date(dueDate.getTime() - notificationTiming * 60000);
+      const notificationKey = `task-${task.id}`;
+      const timeDiff = Math.abs(now.getTime() - notificationTime.getTime());
+      const isInNotificationWindow = timeDiff < 60000;
+
+      if (isInNotificationWindow && !sentNotifications.has(notificationKey)) {
+        // Determine notification type based on task status
+        let notificationType: 'task_due' | 'task_overdue' = 'task_due';
+        const isOverdue = dueDate < now;
+
+        if (isOverdue) {
+          notificationType = 'task_overdue';
+        }
+
+        const notificationData = createTaskNotification(
+          task,
+          notificationType,
+          user.userId
+        );
+
+        createPersistentNotification(notificationData);
+
+        // Show immediate toast notification
+        const priority = task.priority.toUpperCase();
+        const timeMessage = notificationTiming >= 60
+          ? `${notificationTiming / 60} hour${notificationTiming / 60 !== 1 ? 's' : ''}`
+          : `${notificationTiming} minute${notificationTiming !== 1 ? 's' : ''}`;
+
+        addToastNotification({
+          id: notificationKey,
+          title: `${priority} Priority Task Due Soon!`,
+          body: `${task.title} is due in ${timeMessage}`,
+          timestamp: Date.now()
+        });
+
+        // Send browser notification
+        if (canSendBrowserNotifications) {
+          try {
+            new Notification(`${priority} Priority Task Due Soon!`, {
+              body: `${task.title} is due in ${timeMessage}`,
+              icon: '/favicon.ico',
+              tag: notificationKey
+            });
+          } catch (error) {
+            console.error('Browser notification failed:', error);
+          }
+        }
+
+        setSentNotifications(prev => new Set([...prev, notificationKey]));
+      }
+
+      // Clean up expired sent notifications
+      if (timeDiff > 60000 && sentNotifications.has(notificationKey)) {
+        setSentNotifications(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(notificationKey);
+          return newSet;
+        });
+      }
+    });
+  };
+
+  // Replace existing checkAndSendNotifications with enhanced version
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('🚀 Enhanced global notification system starting...');
+
+    // Request notification permission
+    if ('Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+
+    // Run immediate check
+    checkAndSendNotificationsEnhanced();
+
+    // Set up interval
+    const notificationInterval = setInterval(() => {
+      checkAndSendNotificationsEnhanced();
+    }, 10000); // 10 seconds for testing, change to 60000 for production
+
+    return () => {
+      clearInterval(notificationInterval);
+    };
+  }, [user, upcomingTasks, upcomingReminders, sentNotifications]);
+
   const value: NotificationContextType = {
+    // Existing toast functionality
     toastNotifications,
     addToastNotification,
     removeToastNotification,
     upcomingTasks,
     setUpcomingTasks,
     upcomingReminders,
-    setUpcomingReminders,
+    setUpcomingReminders: updateUpcomingReminders,
+
+    // New persistent notification functionality
+    notifications,
+    unreadCount,
+    isLoadingNotifications,
+    refreshNotifications,
+    markAsRead,
+    markAllAsRead,
+    createPersistentNotification,
+    cleanupOldNotifications,
   };
 
   return (
