@@ -11,6 +11,11 @@ interface NavItem {
   icon?: string;
 }
 
+/**
+ * @deprecated This component is deprecated and replaced by CurrentSectionButton.
+ * It provides a much better UX with consolidated navigation.
+ * Use CurrentSectionButton for all new implementations.
+ */
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();

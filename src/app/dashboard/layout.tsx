@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import Navigation from "@/components/navigation/Navigation";
+import CurrentSectionButton from "@/components/navigation/CurrentSectionButton";
 import SearchModal from "@/components/search/SearchModal";
 import NotificationBell from "@/components/notification/NotificationBell";
 import NotificationCenter from "@/components/notification/NotificationCenter";
@@ -63,13 +63,13 @@ export default function DashboardLayout({
                 </div>
               </div>
 
-              <div className="row" style={{ gap: '12px', alignItems: 'center' }}>
+              <div className="row" style={{ gap: '8px', alignItems: 'center' }}>
                 {/* Search Button */}
                 <button
                   onClick={handleSearchClick}
                   className="btn ghost"
                   style={{
-                    padding: '8px 16px',
+                    padding: '8px 12px',
                     borderRadius: '8px',
                     fontSize: '14px',
                     display: 'flex',
@@ -92,14 +92,14 @@ export default function DashboardLayout({
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.35-4.35"></path>
                   </svg>
-                  Search
+                  <span className="hidden sm:inline">Search</span>
                 </button>
 
                 {/* Notification Bell */}
                 <NotificationBell onClick={handleNotificationClick} />
 
-                {/* Navigation */}
-                <Navigation />
+                {/* Current Section Navigation */}
+                <CurrentSectionButton />
               </div>
             </div>
           </div>
