@@ -15,11 +15,12 @@ import {
   where,
   orderBy,
   limit,
+  startAfter,
   Timestamp,
   writeBatch,
   onSnapshot
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { getDb } from './firebase';
 import {
   PersistentNotification,
   CreateNotificationData,
@@ -39,7 +40,8 @@ export const createNotification = async (
   notificationData: CreateNotificationData
 ): Promise<string> => {
   try {
-    const docRef = await addDoc(collection(db, NOTIFICATIONS_COLLECTION), {
+    const database = getDb();
+    const docRef = await addDoc(collection(database, NOTIFICATIONS_COLLECTION), {
       ...notificationData,
       timestamp: Timestamp.now(),
       isRead: false,
@@ -60,11 +62,11 @@ export const createNotificationsBatch = async (
   notificationsData: CreateNotificationData[]
 ): Promise<string[]> => {
   try {
-    const batch = writeBatch(db);
+    const batch = writeBatch(getDb());
     const notificationRefs: string[] = [];
 
     notificationsData.forEach((notificationData) => {
-      const docRef = doc(collection(db, NOTIFICATIONS_COLLECTION));
+      const docRef = doc(collection(getDb(), NOTIFICATIONS_COLLECTION));
       notificationRefs.push(docRef.id);
       batch.set(docRef, {
         ...notificationData,
@@ -91,10 +93,10 @@ export const getUserNotifications = async (
   filters: NotificationFilters = {},
   sortBy: NotificationSortOption = 'timestamp',
   limitCount: number = 50,
-  startAfter?: Timestamp
+  startAfterDoc?: Timestamp
 ): Promise<PersistentNotification[]> => {
   try {
-    let q = query(collection(db, NOTIFICATIONS_COLLECTION));
+    let q = query(collection(getDb(), NOTIFICATIONS_COLLECTION));
 
     // Always filter by user
     q = query(q, where('userId', '==', userId));
@@ -125,8 +127,8 @@ export const getUserNotifications = async (
     q = query(q, orderBy(sortField, sortDirection as 'asc' | 'desc'));
 
     // Apply pagination
-    if (startAfter) {
-      q = query(q, startAfter(startAfter));
+    if (startAfterDoc) {
+      q = query(q, startAfter(startAfterDoc));
     }
     q = query(q, limit(limitCount));
 
@@ -147,7 +149,7 @@ export const getUserNotifications = async (
 export const getUnreadNotificationsCount = async (userId: string): Promise<number> => {
   try {
     const q = query(
-      collection(db, NOTIFICATIONS_COLLECTION),
+      collection(getDb(), NOTIFICATIONS_COLLECTION),
       where('userId', '==', userId),
       where('isRead', '==', false),
       where('isDismissed', '==', false)
@@ -166,7 +168,7 @@ export const getUnreadNotificationsCount = async (userId: string): Promise<numbe
  */
 export const markNotificationAsRead = async (notificationId: string): Promise<void> => {
   try {
-    const notificationRef = doc(db, NOTIFICATIONS_COLLECTION, notificationId);
+    const notificationRef = doc(getDb(), NOTIFICATIONS_COLLECTION, notificationId);
     await updateDoc(notificationRef, {
       isRead: true,
       readAt: Timestamp.now()
@@ -182,10 +184,10 @@ export const markNotificationAsRead = async (notificationId: string): Promise<vo
  */
 export const markMultipleNotificationsAsRead = async (notificationIds: string[]): Promise<void> => {
   try {
-    const batch = writeBatch(db);
+    const batch = writeBatch(getDb());
 
     notificationIds.forEach((id) => {
-      const notificationRef = doc(db, NOTIFICATIONS_COLLECTION, id);
+      const notificationRef = doc(getDb(), NOTIFICATIONS_COLLECTION, id);
       batch.update(notificationRef, {
         isRead: true,
         readAt: Timestamp.now()
@@ -205,16 +207,16 @@ export const markMultipleNotificationsAsRead = async (notificationIds: string[])
 export const markAllNotificationsAsRead = async (userId: string): Promise<void> => {
   try {
     const q = query(
-      collection(db, NOTIFICATIONS_COLLECTION),
+      collection(getDb(), NOTIFICATIONS_COLLECTION),
       where('userId', '==', userId),
       where('isRead', '==', false)
     );
 
     const querySnapshot = await getDocs(q);
-    const batch = writeBatch(db);
+    const batch = writeBatch(getDb());
 
     querySnapshot.docs.forEach((docSnapshot) => {
-      const notificationRef = doc(db, NOTIFICATIONS_COLLECTION, docSnapshot.id);
+      const notificationRef = doc(getDb(), NOTIFICATIONS_COLLECTION, docSnapshot.id);
       batch.update(notificationRef, {
         isRead: true,
         readAt: Timestamp.now()
@@ -233,7 +235,7 @@ export const markAllNotificationsAsRead = async (userId: string): Promise<void> 
  */
 export const dismissNotification = async (notificationId: string): Promise<void> => {
   try {
-    const notificationRef = doc(db, NOTIFICATIONS_COLLECTION, notificationId);
+    const notificationRef = doc(getDb(), NOTIFICATIONS_COLLECTION, notificationId);
     await updateDoc(notificationRef, {
       isDismissed: true,
       dismissedAt: Timestamp.now()
@@ -249,7 +251,7 @@ export const dismissNotification = async (notificationId: string): Promise<void>
  */
 export const deleteNotification = async (notificationId: string): Promise<void> => {
   try {
-    const notificationRef = doc(db, NOTIFICATIONS_COLLECTION, notificationId);
+    const notificationRef = doc(getDb(), NOTIFICATIONS_COLLECTION, notificationId);
     await deleteDoc(notificationRef);
   } catch (error) {
     console.error('Error deleting notification:', error);
@@ -266,16 +268,16 @@ export const cleanupOldNotifications = async (userId: string): Promise<void> => 
     cutoffDate.setDate(cutoffDate.getDate() - DEFAULT_NOTIFICATION_CONFIG.retentionDays);
 
     const q = query(
-      collection(db, NOTIFICATIONS_COLLECTION),
+      collection(getDb(), NOTIFICATIONS_COLLECTION),
       where('userId', '==', userId),
       where('timestamp', '<', Timestamp.fromDate(cutoffDate))
     );
 
     const querySnapshot = await getDocs(q);
-    const batch = writeBatch(db);
+    const batch = writeBatch(getDb());
 
     querySnapshot.docs.forEach((docSnapshot) => {
-      const notificationRef = doc(db, NOTIFICATIONS_COLLECTION, docSnapshot.id);
+      const notificationRef = doc(getDb(), NOTIFICATIONS_COLLECTION, docSnapshot.id);
       batch.delete(notificationRef);
     });
 
@@ -292,7 +294,7 @@ export const cleanupOldNotifications = async (userId: string): Promise<void> => 
 export const getNotificationStats = async (userId: string): Promise<NotificationStats> => {
   try {
     const q = query(
-      collection(db, NOTIFICATIONS_COLLECTION),
+      collection(getDb(), NOTIFICATIONS_COLLECTION),
       where('userId', '==', userId)
     );
 
@@ -342,7 +344,7 @@ export const listenToUserNotifications = (
   callback: (notifications: PersistentNotification[]) => void,
   filters: NotificationFilters = {}
 ): (() => void) => {
-  let q = query(collection(db, NOTIFICATIONS_COLLECTION));
+  let q = query(collection(getDb(), NOTIFICATIONS_COLLECTION));
 
   // Always filter by user
   q = query(q, where('userId', '==', userId));
@@ -390,7 +392,7 @@ export const listenToUnreadCount = (
   callback: (count: number) => void
 ): (() => void) => {
   const q = query(
-    collection(db, NOTIFICATIONS_COLLECTION),
+    collection(getDb(), NOTIFICATIONS_COLLECTION),
     where('userId', '==', userId),
     where('isRead', '==', false),
     where('isDismissed', '==', false)
@@ -415,7 +417,7 @@ export const getEntityNotifications = async (
 ): Promise<PersistentNotification[]> => {
   try {
     const q = query(
-      collection(db, NOTIFICATIONS_COLLECTION),
+      collection(getDb(), NOTIFICATIONS_COLLECTION),
       where('userId', '==', userId),
       where('sourceEntity.type', '==', entityType),
       where('sourceEntity.id', '==', entityId),

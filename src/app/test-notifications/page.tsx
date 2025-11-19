@@ -280,14 +280,14 @@ export default function TestNotificationsPage() {
                     <span
                       className="badge"
                       style={{
-                        background: getPriorityColor(template.priority) + '20',
-                        color: getPriorityColor(template.priority),
-                        borderColor: getPriorityColor(template.priority) + '40',
+                        background: getPriorityColor(template.priority || 'medium') + '20',
+                        color: getPriorityColor(template.priority || 'medium'),
+                        borderColor: getPriorityColor(template.priority || 'medium') + '40',
                         fontSize: '10px',
                         padding: '2px 6px'
                       }}
                     >
-                      {template.priority.toUpperCase()}
+                      {(template.priority || 'medium').toUpperCase()}
                     </span>
                     <button
                       onClick={() => handleCreateNotification(template)}

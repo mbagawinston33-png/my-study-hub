@@ -135,25 +135,7 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={
-        <div className="row" style={{ gap: '12px', alignItems: 'center' }}>
-          <Bell size={20} style={{ color: 'var(--brand)' }} />
-          <span>Notifications</span>
-          {unreadCount > 0 && (
-            <span
-              className="badge"
-              style={{
-                background: 'var(--brand)',
-                color: 'white',
-                fontSize: '11px',
-                padding: '2px 6px'
-              }}
-            >
-              {unreadCount}
-            </span>
-          )}
-        </div>
-      }
+      title={`Notifications${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
       size="medium"
       showCloseButton={true}
     >
