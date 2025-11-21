@@ -179,6 +179,10 @@ export default function DashboardPage() {
     router.push(`/dashboard/reminders?highlight=${reminderId}`);
   };
 
+  const handleSubjectClick = (subjectId: string) => {
+    router.push(`/dashboard/subjects?highlight=${subjectId}`);
+  };
+
   return (
     <div>
       {/* Welcome Section */}
@@ -389,20 +393,31 @@ export default function DashboardPage() {
           ) : subjects.length > 0 ? (
             <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(2, 1fr)' }}>
               {subjects.slice(0, 4).map((subject) => (
-                <div key={subject.id} className="row" style={{ gap: '8px' }}>
+                <div
+                  key={subject.id}
+                  onClick={() => handleSubjectClick(subject.id)}
+                  style={{
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    transition: 'background-color 0.2s',
+                    padding: '8px',
+                    margin: '-8px'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--hover)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
                   <span
                     className="badge"
                     style={{
                       background: `${subject.color}15`,
                       color: subject.color,
-                      border: `1px solid ${subject.color}30`
+                      border: `1px solid ${subject.color}30`,
+                      fontSize: '14px',
+                      fontWeight: '500'
                     }}
                   >
-                    {subject.code || subject.name}
+                    {subject.name}
                   </span>
-                  <div className="small">
-                    Active
-                  </div>
                 </div>
               ))}
             </div>
