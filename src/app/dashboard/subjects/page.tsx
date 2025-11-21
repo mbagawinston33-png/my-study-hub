@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Subject, SubjectWithFileCount } from "@/types/subject";
 import { Plus, BookOpen, Edit, Trash2, Users, Calendar, RefreshCw, FolderOpen } from "lucide-react";
 import SubjectFilesModal from "@/components/subject/SubjectFilesModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 // Fetch subjects from Firebase Firestore
 const getSubjectsFromFirebase = async (userId: string): Promise<Subject[]> => {
@@ -60,6 +61,15 @@ export default function SubjectsPage() {
   // Modal state
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    subjectId: string | null;
+    subjectName: string;
+  }>({
+    isOpen: false,
+    subjectId: null,
+    subjectName: ''
+  });
 
   const refreshSubjects = async () => {
     if (!user?.userId) return;
@@ -124,10 +134,9 @@ export default function SubjectsPage() {
     return matchesSearch;
   });
 
-  const handleDeleteSubject = async (subjectId: string) => {
-    if (!confirm("Are you sure you want to delete this subject? This action cannot be undone.")) {
-      return;
-    }
+  const handleDeleteSubject = async () => {
+    const { subjectId } = deleteConfirmModal;
+    if (!subjectId) return;
 
     try {
       // Delete from Firebase
@@ -140,10 +149,25 @@ export default function SubjectsPage() {
       // Update UI
       setSubjects(prev => prev.filter(subject => subject.id !== subjectId));
 
-      
+      // Close modal
+      setDeleteConfirmModal({ isOpen: false, subjectId: null, subjectName: '' });
+
     } catch (error) {
 // TODO: Show error message to user
+      setDeleteConfirmModal({ isOpen: false, subjectId: null, subjectName: '' });
     }
+  };
+
+  const openDeleteConfirmModal = (subjectId: string, subjectName: string) => {
+    setDeleteConfirmModal({
+      isOpen: true,
+      subjectId,
+      subjectName
+    });
+  };
+
+  const closeDeleteConfirmModal = () => {
+    setDeleteConfirmModal({ isOpen: false, subjectId: null, subjectName: '' });
   };
 
   // Modal handlers
@@ -393,7 +417,7 @@ export default function SubjectsPage() {
                     )}
                   </button>
                   <button
-                    onClick={() => handleDeleteSubject(subject.id)}
+                    onClick={() => openDeleteConfirmModal(subject.id, subject.name)}
                     className="btn ghost"
                     style={{ padding: '8px' }}
                     title="Delete subject"
@@ -415,6 +439,18 @@ export default function SubjectsPage() {
           onClose={closeFilesModal}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirmModal.isOpen}
+        onClose={closeDeleteConfirmModal}
+        onConfirm={handleDeleteSubject}
+        title="Delete Subject"
+        message={`Are you sure you want to delete "${deleteConfirmModal.subjectName}"? This action cannot be undone and will permanently remove the subject and all associated data.`}
+        confirmText="Delete Subject"
+        cancelText="Cancel"
+        variant="danger"
+      />
 
       <style jsx>{`
         @keyframes spin {

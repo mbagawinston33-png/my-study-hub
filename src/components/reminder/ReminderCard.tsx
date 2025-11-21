@@ -5,6 +5,7 @@ import { Check, X, Edit, Clock, AlertCircle } from 'lucide-react';
 import { Reminder } from '@/types/reminder';
 import { toggleReminderCompletion, deleteReminder } from '@/lib/reminders';
 import { useAuth } from '@/contexts/AuthContext';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 interface ReminderCardProps {
   reminder: Reminder;
@@ -25,6 +26,7 @@ export default function ReminderCard({
 }: ReminderCardProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleToggleComplete = async () => {
     if (!user || isLoading) return;
@@ -39,19 +41,22 @@ export default function ReminderCard({
     }
   };
 
-  const handleDelete = async () => {
-    if (!user || isLoading) return;
+  const handleDelete = () => {
+    if (isLoading) return;
+    setShowDeleteModal(true);
+  };
 
-    if (!confirm('Are you sure you want to delete this reminder?')) {
-      return;
-    }
+  const handleConfirmDelete = async () => {
+    if (!user || isLoading) return;
 
     setIsLoading(true);
     try {
       await deleteReminder(user.userId, reminder.id);
       onDelete?.(reminder.id);
+      setShowDeleteModal(false);
     } catch (error) {
-} finally {
+      setShowDeleteModal(false);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -262,6 +267,19 @@ export default function ReminderCard({
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Reminder"
+        message={`Are you sure you want to delete the reminder "${reminder.title}"? This action cannot be undone and will permanently remove the reminder.`}
+        confirmText="Delete Reminder"
+        cancelText="Cancel"
+        variant="danger"
+        loading={isLoading}
+      />
     </div>
   );
 }

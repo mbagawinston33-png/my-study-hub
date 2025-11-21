@@ -17,6 +17,7 @@ import {
   Download,
   ExternalLink
 } from "lucide-react";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 interface TaskCardProps {
   task: Task | TaskWithSubject;
@@ -40,6 +41,7 @@ export default function TaskCard({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const isOverdue = task.dueDate.toDate() < new Date() && task.status !== 'completed';
@@ -77,8 +79,13 @@ export default function TaskCard({
   };
 
   const handleDelete = () => {
-    if (onDelete && window.confirm('Are you sure you want to delete this task?')) {
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (onDelete) {
       onDelete(task.id);
+      setShowDeleteModal(false);
     }
   };
 
@@ -427,6 +434,18 @@ export default function TaskCard({
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Task"
+        message={`Are you sure you want to delete the task "${task.title}"? This action cannot be undone and will permanently remove the task and all associated data.`}
+        confirmText="Delete Task"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

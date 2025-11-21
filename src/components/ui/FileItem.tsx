@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Download, Trash2, Eye, AlertCircle, File } from 'lucide-react';
 import { SubjectFile, FILE_TYPE_CONFIG } from '@/types/subject';
 import { formatFileSize, formatDate, downloadFile, isPreviewable } from '@/lib/fileUtils';
+import ConfirmModal from './ConfirmModal';
 
 interface FileItemProps {
   file: SubjectFile;
@@ -22,6 +23,7 @@ export default function FileItem({
 }: FileItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fileConfig = FILE_TYPE_CONFIG[file.type] || FILE_TYPE_CONFIG.other;
 
@@ -37,20 +39,20 @@ export default function FileItem({
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (isDeleting || !onDelete) return;
+    setShowDeleteModal(true);
+  };
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${file.originalName}"? This action cannot be undone.`
-    );
-
-    if (!confirmed) return;
+  const handleConfirmDelete = async () => {
+    if (!onDelete) return;
 
     try {
       setIsDeleting(true);
       await onDelete(file.id);
+      setShowDeleteModal(false);
     } catch (error) {
-setIsDeleting(false);
+      setIsDeleting(false);
     }
   };
 
@@ -300,6 +302,19 @@ setIsDeleting(false);
           100% { transform: rotate(360deg); }
         }
       `}</style>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete File"
+        message={`Are you sure you want to delete "${file.originalName}"? This action cannot be undone and will permanently remove the file from storage.`}
+        confirmText="Delete File"
+        cancelText="Cancel"
+        variant="danger"
+        loading={isDeleting}
+      />
     </div>
   );
 }

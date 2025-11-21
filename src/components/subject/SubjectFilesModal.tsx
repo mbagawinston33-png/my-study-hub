@@ -5,6 +5,7 @@ import { FolderOpen, X, Upload, Loader2, AlertCircle } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import FileUpload from '@/components/ui/FileUpload';
 import FileList from '@/components/ui/FileList';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { Subject, SubjectFile, DEFAULT_FILE_VALIDATION_RULES, FileValidationRules } from '@/types/subject';
 import { uploadFile, getSubjectFiles, deleteFile } from '@/lib/storage';
 import { getFileValidationRules, createValidationRulesFromAdminConfig } from '@/lib/adminConfig';
@@ -30,6 +31,15 @@ export default function SubjectFilesModal({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [fileValidationRules, setFileValidationRules] = useState<FileValidationRules>(DEFAULT_FILE_VALIDATION_RULES);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    fileId: string | null;
+    fileName: string;
+  }>({
+    isOpen: false,
+    fileId: null,
+    fileName: ''
+  });
 
   // Load files and validation rules when modal opens
   useEffect(() => {
@@ -109,8 +119,23 @@ setError('Failed to upload files. Please try again.');
     }
   };
 
-  const handleDeleteFile = async (fileId: string) => {
+  const handleDeleteFile = (fileId: string) => {
     if (!user?.userId) return;
+
+    // Find the file to get its name for the confirmation dialog
+    const file = files.find(f => f.id === fileId);
+    if (!file) return;
+
+    setDeleteConfirmModal({
+      isOpen: true,
+      fileId,
+      fileName: file.originalName
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { fileId } = deleteConfirmModal;
+    if (!fileId || !user?.userId) return;
 
     try {
       await deleteFile(fileId, subject.id);
@@ -118,9 +143,17 @@ setError('Failed to upload files. Please try again.');
       // Remove file from local state
       setFiles(prev => prev.filter(file => file.id !== fileId));
 
+      // Close modal
+      setDeleteConfirmModal({ isOpen: false, fileId: null, fileName: '' });
+
     } catch (error) {
-setError('Failed to delete file. Please try again.');
+      setError('Failed to delete file. Please try again.');
+      setDeleteConfirmModal({ isOpen: false, fileId: null, fileName: '' });
     }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmModal({ isOpen: false, fileId: null, fileName: '' });
   };
 
   const handleRetry = () => {
@@ -306,6 +339,18 @@ setError('Failed to delete file. Please try again.');
           animation: animate-spin 1s linear infinite;
         }
       `}</style>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirmModal.isOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete File"
+        message={`Are you sure you want to delete "${deleteConfirmModal.fileName}"? This action cannot be undone and will permanently remove the file from this subject.`}
+        confirmText="Delete File"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </Modal>
   );
 }
