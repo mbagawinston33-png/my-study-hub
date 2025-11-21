@@ -175,6 +175,10 @@ export default function DashboardPage() {
     router.push(`/dashboard/tasks?highlight=${taskId}`);
   };
 
+  const handleReminderClick = (reminderId: string) => {
+    router.push(`/dashboard/reminders?highlight=${reminderId}`);
+  };
+
   return (
     <div>
       {/* Welcome Section */}
@@ -334,13 +338,24 @@ export default function DashboardPage() {
           ) : upcomingReminders.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {upcomingReminders.slice(0, 3).map((reminder) => (
-                <div key={reminder.id} className="row" style={{ gap: '10px' }}>
-                  <div style={{ flex: 1 }}>
-                    <b style={{ color: 'var(--text)' }}>{reminder.title}</b>
-                    <div className="small">
-                      Due {reminder.dueDate.toDate().toLocaleDateString()} • {reminder.dueDate.toDate().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-                    </div>
-                  </div>
+                <div
+                  key={reminder.id}
+                  onClick={() => handleReminderClick(reminder.id)}
+                  style={{
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    transition: 'background-color 0.2s',
+                    padding: '2px',
+                    margin: '-2px'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--hover)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <ReminderCard
+                    reminder={reminder}
+                    compact={true}
+                    showActions={false}
+                  />
                 </div>
               ))}
             </div>
