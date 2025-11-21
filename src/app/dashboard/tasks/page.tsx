@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { Task, TaskWithSubject, TaskFilter, TaskStats } from "@/types/task";
+import { Task, TaskWithSubject, TaskFilter, TaskStats, TaskSortOption } from "@/types/task";
 import {
   getUserTasks,
   getTasksByFilter,
@@ -26,7 +26,8 @@ import {
   Calendar,
   BarChart3,
   RefreshCw,
-  SortAsc
+  SortAsc,
+  SortDesc
 } from "lucide-react";
 
 const FILTER_OPTIONS: { value: TaskFilter; label: string; icon: React.ReactNode }[] = [
@@ -73,6 +74,10 @@ export default function TasksPage() {
   const [selectedFilter, setSelectedFilter] = useState<TaskFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>('');
+
+  // Sort state
+  const [sortBy, setSortBy] = useState<TaskSortOption>('dueDate');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Load tasks and data
   const loadTasks = async () => {
@@ -193,6 +198,61 @@ export default function TasksPage() {
     setIsRefreshing(false);
   };
 
+  // Sort tasks function
+  const sortTasks = (tasks: TaskWithSubject[]) => {
+    const sortedTasks = [...tasks];
+
+    switch (sortBy) {
+      case 'dueDate':
+        sortedTasks.sort((a, b) => {
+          const dateA = a.dueDate.toDate().getTime();
+          const dateB = b.dueDate.toDate().getTime();
+          return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+        });
+        break;
+      case 'priority':
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        sortedTasks.sort((a, b) => {
+          const priorityA = priorityOrder[a.priority];
+          const priorityB = priorityOrder[b.priority];
+          return sortDirection === 'asc' ? priorityA - priorityB : priorityB - priorityA;
+        });
+        break;
+      case 'createdAt':
+        sortedTasks.sort((a, b) => {
+          const dateA = a.createdAt.toDate().getTime();
+          const dateB = b.createdAt.toDate().getTime();
+          return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+        });
+        break;
+      case 'title':
+        sortedTasks.sort((a, b) => {
+          const titleA = a.title.toLowerCase();
+          const titleB = b.title.toLowerCase();
+          return sortDirection === 'asc'
+            ? titleA.localeCompare(titleB)
+            : titleB.localeCompare(titleA);
+        });
+        break;
+      default:
+        break;
+    }
+
+    return sortedTasks;
+  };
+
+  // Sort handler
+  const handleSortChange = (newSortBy: TaskSortOption) => {
+    if (newSortBy === sortBy) {
+      // Toggle direction if same sort option
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New sort option, reset to ascending
+      setSortBy(newSortBy);
+      setSortDirection('asc');
+    }
+  };
+
   // Filter tasks based on search and subject
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -202,6 +262,9 @@ export default function TasksPage() {
 
     return matchesSearch && matchesSubject;
   });
+
+  // Apply sorting to filtered tasks
+  const sortedFilteredTasks = sortTasks(filteredTasks);
 
   // Get filter stats
   const getFilterCount = (filter: TaskFilter) => {
@@ -343,21 +406,38 @@ export default function TasksPage() {
 
           {/* Sort */}
           <div className="row" style={{ gap: '8px', alignItems: 'center' }}>
-            <SortAsc size={16} style={{ color: 'var(--text-2)' }} />
+            <button
+              onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+              className="btn ghost"
+              style={{
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--brand)',
+                cursor: 'pointer'
+              }}
+              title={`Sort direction: ${sortDirection === 'asc' ? 'Ascending' : 'Descending'}`}
+            >
+              {sortDirection === 'asc' ? <SortAsc size={16} /> : <SortDesc size={16} />}
+            </button>
             <select
+              value={sortBy}
+              onChange={(e) => handleSortChange(e.target.value as TaskSortOption)}
               style={{
                 border: 'none',
                 outline: 'none',
                 fontSize: '14px',
                 color: 'var(--text)',
-                background: 'transparent'
+                background: 'transparent',
+                cursor: 'pointer',
+                fontWeight: '500'
               }}
-              defaultValue="dueDate"
             >
-              <option value="dueDate">Sort by Due Date</option>
-              <option value="priority">Sort by Priority</option>
-              <option value="createdAt">Sort by Created</option>
-              <option value="title">Sort by Title</option>
+              <option value="dueDate">Due Date</option>
+              <option value="priority">Priority</option>
+              <option value="createdAt">Created</option>
+              <option value="title">Title</option>
             </select>
           </div>
         </div>
@@ -408,8 +488,8 @@ export default function TasksPage() {
             <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 12px' }} />
             <div>Loading tasks...</div>
           </div>
-        ) : filteredTasks.length > 0 ? (
-          filteredTasks.map(task => (
+        ) : sortedFilteredTasks.length > 0 ? (
+          sortedFilteredTasks.map(task => (
             <TaskCard
               key={task.id}
               task={task}
