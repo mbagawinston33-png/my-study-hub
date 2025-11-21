@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { Task, TaskFormData } from "@/types/task";
+import { Task, TaskFormData, TaskFile } from "@/types/task";
 import { Timestamp } from "firebase/firestore";
 import { getTaskById, updateTask } from "@/lib/tasks";
 import { getUserSubjects } from "@/lib/storage";
@@ -38,6 +38,7 @@ export default function EditTaskPage() {
           getUserSubjects(user.userId)
         ]);
 
+        
         setTask(taskData);
         setSubjects(userSubjects);
       } catch (error: any) {
@@ -55,10 +56,10 @@ if (error.message === 'Task not found' || error.message === 'Access denied') {
   }, [user, taskId]);
 
   // Handle task update
-  const handleSubmit = async (data: TaskFormData, files: File[]) => {
+  const handleSubmit = async (data: TaskFormData, files: File[], existingFiles: TaskFile[] = []) => {
     if (!user?.userId || !task) return;
 
-    
+
     setIsLoading(true);
     setError(null);
 
@@ -76,14 +77,19 @@ if (error.message === 'Task not found' || error.message === 'Access denied') {
             () => {} // Empty progress callback
           );
 
-          // Add new files to existing task files
+          // Combine existing files with newly uploaded files
           if (uploadedFiles.length > 0) {
-            const existingFiles = task.attachedFiles || [];
-            await updateTaskAttachedFiles(user.userId, taskId, [...uploadedFiles, ...existingFiles]);
+            await updateTaskAttachedFiles(user.userId, taskId, [...existingFiles, ...uploadedFiles]);
+          } else if (existingFiles.length !== (task.attachedFiles?.length || 0)) {
+            // Only update existing files if the count has changed (files were deleted)
+            await updateTaskAttachedFiles(user.userId, taskId, existingFiles);
           }
         } catch (fileError) {
                     // Continue with task update even if file upload fails
         }
+      } else if (existingFiles.length !== (task.attachedFiles?.length || 0)) {
+        // Update existing files if they were deleted (no new uploads)
+        await updateTaskAttachedFiles(user.userId, taskId, existingFiles);
       }
 
       // Sync with global notification context (update task in upcoming tasks)
@@ -95,6 +101,7 @@ if (error.message === 'Task not found' || error.message === 'Access denied') {
         dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : task.dueDate,
         priority: data.priority || task.priority,
         subjectId: data.subjectId || task.subjectId,
+        attachedFiles: existingFiles,
         updatedAt: Timestamp.now()
       };
 

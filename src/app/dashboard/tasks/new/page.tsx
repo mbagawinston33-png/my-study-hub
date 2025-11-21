@@ -44,7 +44,7 @@ export default function NewTaskPage() {
   }, [user, loading]);
 
   // Handle task creation
-  const handleSubmit = async (data: TaskFormData, files: File[]) => {
+  const handleSubmit = async (data: TaskFormData, files: File[], existingFiles: any[] = []) => {
     if (!user?.userId) return;
 
     

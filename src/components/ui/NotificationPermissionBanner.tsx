@@ -28,7 +28,6 @@ export default function NotificationPermissionBanner() {
       const permission = await Notification.requestPermission();
 
       if (permission === 'granted') {
-        console.log('✅ Browser notifications enabled');
         setShowBanner(false);
 
         // Show a test notification to confirm it works
@@ -38,7 +37,6 @@ export default function NotificationPermissionBanner() {
           tag: 'notification-test'
         });
       } else if (permission === 'denied') {
-        console.log('❌ Browser notifications denied');
         setShowBanner(false);
       }
     } catch (error) {

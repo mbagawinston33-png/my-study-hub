@@ -72,13 +72,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   // Wrapper function to update upcoming reminders and trigger immediate notification check
   const updateUpcomingReminders = (reminders: Reminder[] | ((prev: Reminder[]) => Reminder[])) => {
-    console.log('📝 updateUpcomingReminders called');
     setUpcomingReminders(prev => {
       const newReminders = typeof reminders === 'function' ? reminders(prev) : reminders;
-      console.log('📝 Updating reminders from', prev.length, 'to', newReminders.length);
       // Trigger immediate notification check after a brief delay to ensure state is updated
       setTimeout(() => {
-        console.log('⚡ Triggering immediate notification check');
         checkAndSendNotificationsEnhanced();
       }, 100);
       return newReminders;
@@ -144,42 +141,24 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
        location.hostname === 'localhost' ||
        location.hostname === '127.0.0.1');
 
-    if (!canSendBrowserNotifications) {
-      console.log('🔔 Browser notifications not available, using toast only');
-    } else {
-      console.log('🔔 Browser notifications enabled, using both toast + browser');
-    }
-
     const now = new Date();
-    console.log('⏰ Current time:', now.toLocaleTimeString());
 
     // Check reminders
-    console.log('📅 Checking reminders:', upcomingReminders.length);
-    upcomingReminders.forEach((reminder, index) => {
+    upcomingReminders.forEach((reminder) => {
       const notificationTiming = getNotificationTiming(reminder);
-      console.log(`📝 Reminder ${index + 1}: "${reminder.title}"`);
-      console.log(`   Due: ${reminder.dueDate.toDate().toLocaleTimeString()}`);
-      console.log(`   Notification timing: ${notificationTiming} minutes before`);
 
-      if (!notificationTiming) {
-        console.log('   ❌ No notification timing found');
-        return;
-      }
+      if (!notificationTiming) return;
 
       const dueDate = reminder.dueDate.toDate();
       const notificationTime = new Date(dueDate.getTime() - notificationTiming * 60000);
       const notificationKey = `reminder-${reminder.id}`;
       const timeDiff = Math.abs(now.getTime() - notificationTime.getTime());
 
-      console.log(`   Time diff: ${timeDiff / 1000} seconds`);
-      console.log(`   Already sent: ${sentNotifications.has(notificationKey)}`);
-
       // Check if we're in the notification window
       const isInNotificationWindow = timeDiff < 60000;
 
       // Clean up expired sent notifications (if time window has passed)
       if (timeDiff > 60000 && sentNotifications.has(notificationKey)) {
-        console.log('🧹 Cleaning up expired notification tracking');
         setSentNotifications(prev => {
           const newSet = new Set(prev);
           newSet.delete(notificationKey);
@@ -188,8 +167,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       }
 
       if (isInNotificationWindow && !sentNotifications.has(notificationKey)) {
-        console.log('🚨 SENDING NOTIFICATION!');
-
         // Always show toast notification
         addToastNotification({
           id: notificationKey,
@@ -206,51 +183,31 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
               icon: '/favicon.ico',
               tag: notificationKey
             });
-            console.log('✅ Browser notification sent successfully');
           } catch (error) {
-            console.error('❌ Browser notification failed:', error);
+            console.error('Browser notification failed:', error);
           }
-        } else {
-          console.log('🍞 Toast notification only (browser notifications not available)');
         }
 
         setSentNotifications(prev => new Set([...prev, notificationKey]));
-      } else {
-        if (!isInNotificationWindow) {
-          console.log('   ⏰ Not in notification window yet');
-        } else {
-          console.log('   🔔 Already sent in this window');
-        }
       }
     });
 
     // Check tasks
-    console.log('🎯 Checking tasks:', upcomingTasks.length);
-    upcomingTasks.forEach((task, index) => {
+    upcomingTasks.forEach((task) => {
       const notificationTiming = getNotificationTiming(task);
-      console.log(`📋 Task ${index + 1}: "${task.title}" (${task.priority})`);
-      console.log(`   Due: ${task.dueDate.toDate().toLocaleTimeString()}`);
-      console.log(`   Notification timing: ${notificationTiming} minutes before`);
 
-      if (!notificationTiming) {
-        console.log('   ❌ No notification timing found');
-        return;
-      }
+      if (!notificationTiming) return;
 
       const dueDate = task.dueDate.toDate();
       const notificationTime = new Date(dueDate.getTime() - notificationTiming * 60000);
       const notificationKey = `task-${task.id}`;
       const timeDiff = Math.abs(now.getTime() - notificationTime.getTime());
 
-      console.log(`   Time diff: ${timeDiff / 1000} seconds`);
-      console.log(`   Already sent: ${sentNotifications.has(notificationKey)}`);
-
       // Check if we're in the notification window
       const isInNotificationWindow = timeDiff < 60000;
 
       // Clean up expired sent notifications (if time window has passed)
       if (timeDiff > 60000 && sentNotifications.has(notificationKey)) {
-        console.log('🧹 Cleaning up expired notification tracking');
         setSentNotifications(prev => {
           const newSet = new Set(prev);
           newSet.delete(notificationKey);
@@ -263,8 +220,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         const timeMessage = notificationTiming >= 60
           ? `${notificationTiming / 60} hour${notificationTiming / 60 !== 1 ? 's' : ''}`
           : `${notificationTiming} minute${notificationTiming !== 1 ? 's' : ''}`;
-
-        console.log('🚨 SENDING TASK NOTIFICATION!');
 
         // Always show toast notification
         addToastNotification({
@@ -282,25 +237,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
               icon: '/favicon.ico',
               tag: notificationKey
             });
-            console.log('✅ Task browser notification sent successfully');
           } catch (error) {
-            console.error('❌ Task browser notification failed:', error);
+            console.error('Task browser notification failed:', error);
           }
-        } else {
-          console.log('🍞 Task toast notification only (browser notifications not available)');
         }
 
         setSentNotifications(prev => new Set([...prev, notificationKey]));
-      } else {
-        if (!isInNotificationWindow) {
-          console.log('   ⏰ Not in notification window yet');
-        } else {
-          console.log('   🔔 Already sent in this window');
-        }
       }
     });
-
-    console.log('🔔 Global notification check completed');
   };
 
   
@@ -372,7 +316,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     try {
       // Trigger a refresh by creating a temporary notification
       // The real-time listener will handle the actual data refresh
-      console.log('Refreshing notifications...');
     } catch (error) {
       console.error('Error refreshing notifications:', error);
     } finally {
@@ -396,7 +339,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       unsubscribeNotifications = listenToUserNotifications(
         user.userId,
         (notificationList) => {
-          console.log('📬 Real-time notifications updated:', notificationList.length);
           setNotifications(notificationList);
         },
         { readStatus: 'all' } // Get all notifications, not just unread
@@ -406,7 +348,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       unsubscribeUnreadCount = listenToUnreadCount(
         user.userId,
         (count) => {
-          console.log('🔢 Unread count updated:', count);
           setUnreadCount(count);
         }
       );
@@ -430,12 +371,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   // Enhanced notification check with persistent storage
   const checkAndSendNotificationsEnhanced = () => {
-    console.log('🔔 Checking notifications...', {
-      userId: user?.userId,
-      upcomingRemindersCount: upcomingReminders.length,
-      reminders: upcomingReminders.map(r => ({ id: r.id, title: r.title, dueDate: r.dueDate.toDate() }))
-    });
-
     const canSendBrowserNotifications =
       'Notification' in window &&
       Notification.permission === 'granted' &&
@@ -444,7 +379,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
        location.hostname === '127.0.0.1');
 
     if (!user) {
-      console.log('❌ No user found, skipping notification check');
       return;
     }
 
@@ -578,8 +512,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Replace existing checkAndSendNotifications with enhanced version
   useEffect(() => {
     if (!user) return;
-
-    console.log('🚀 Enhanced global notification system starting...');
 
     // Request notification permission
     if ('Notification' in window) {

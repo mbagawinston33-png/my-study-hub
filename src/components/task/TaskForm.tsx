@@ -19,7 +19,7 @@ import TaskFileUpload from "@/components/task/TaskFileUpload";
 interface TaskFormProps {
   task?: Task;
   subjects: Subject[];
-  onSubmit: (data: TaskFormData, files: File[]) => Promise<void>;
+  onSubmit: (data: TaskFormData, files: File[], existingFiles: TaskFile[]) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
   taskId?: string;
@@ -38,7 +38,16 @@ export default function TaskForm({
   const [formData, setFormData] = useState<TaskFormData>({
     title: task?.title || '',
     description: task?.description || '',
-    dueDate: task ? task.dueDate.toDate().toISOString().slice(0, 16) : '',
+    dueDate: task ? (() => {
+      const date = task.dueDate.toDate();
+      // FIX: Use local time formatting for datetime-local input instead of UTC conversion
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    })() : '',
     priority: task?.priority || 'medium',
     subjectId: task?.subjectId || ''
   });
@@ -46,6 +55,7 @@ export default function TaskForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [currentTaskFiles, setCurrentTaskFiles] = useState<TaskFile[]>(task?.attachedFiles || []);
 
   // Validate form data
   const validateForm = (): boolean => {
@@ -88,6 +98,11 @@ export default function TaskForm({
     }
   };
 
+  // Handle file deletion from task
+  const handleFileDelete = (fileId: string) => {
+    setCurrentTaskFiles(prev => prev.filter(file => file.id !== fileId));
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +118,7 @@ export default function TaskForm({
 
     if (validateForm()) {
             try {
-        await onSubmit(formData, selectedFiles);
+        await onSubmit(formData, selectedFiles, currentTaskFiles);
               } catch (error) {
               }
     } else {
@@ -113,8 +128,13 @@ export default function TaskForm({
   // Get minimum date for datetime input (current date)
   const getMinDateTime = () => {
     const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
+    // Use local time formatting for consistency with the fix above
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   return (
@@ -349,10 +369,11 @@ export default function TaskForm({
         <TaskFileUpload
           taskId={taskId || ''}
           userId={userId || ''}
-          existingFiles={task?.attachedFiles || []}
+          existingFiles={currentTaskFiles}
           onFilesChange={(files) => {
                         setSelectedFiles(files);
           }}
+          onFileDelete={handleFileDelete}
           disabled={isLoading}
         />
       </div>

@@ -175,14 +175,29 @@ export async function deleteTaskFile(userId: string, fileId: string): Promise<vo
   const db = getDb();
 
   try {
-    // First get the file metadata to get storage path
-    const file = await getTaskFileById(userId, fileId);
+    // First try to get the file metadata to get storage path
+    let storagePath: string | null = null;
 
-    // Delete from Storage
-    const storageRef = ref(storage, file.storagePath);
-    await deleteObject(storageRef);
+    try {
+      const file = await getTaskFileById(userId, fileId);
+      storagePath = file.storagePath;
+    } catch (getFileError) {
+      // File might not exist in Firestore, but we should still try to clean up
+      console.warn('File not found in Firestore, proceeding with cleanup:', fileId);
+    }
 
-    // Delete from Firestore
+    // Delete from Storage if we have a storage path
+    if (storagePath) {
+      try {
+        const storageRef = ref(storage, storagePath);
+        await deleteObject(storageRef);
+      } catch (storageError) {
+        // Storage file might not exist, but that's okay
+        console.warn('Storage file not found, continuing with Firestore cleanup:', storagePath);
+      }
+    }
+
+    // Delete from Firestore (this will succeed even if file doesn't exist)
     const docRef = doc(db, TASK_FILES_COLLECTION, fileId);
     await deleteDoc(docRef);
   } catch (error) {

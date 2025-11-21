@@ -13,9 +13,12 @@ import {
   CheckCircle,
   Loader2,
   Download,
-  Eye
+  Eye,
+  Trash2
 } from "lucide-react";
 import FilePreviewModal from "@/components/ui/FilePreviewModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import { deleteTaskFile } from "@/lib/taskFiles";
 
 interface TaskFileUploadProps {
   taskId: string;
@@ -26,6 +29,7 @@ interface TaskFileUploadProps {
   maxFiles?: number;
   disabled?: boolean;
   validationRules?: FileValidationRules;
+  onFileDelete?: (fileId: string) => void; // New callback for when a file is deleted
 }
 
 export default function TaskFileUpload({
@@ -36,7 +40,8 @@ export default function TaskFileUpload({
   onUploadProgress,
   maxFiles = 10,
   disabled = false,
-  validationRules = DEFAULT_FILE_VALIDATION_RULES
+  validationRules = DEFAULT_FILE_VALIDATION_RULES,
+  onFileDelete
 }: TaskFileUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
@@ -46,6 +51,15 @@ export default function TaskFileUpload({
   const [previewFile, setPreviewFile] = useState<TaskFile | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [currentValidationRules, setCurrentValidationRules] = useState<FileValidationRules>(validationRules);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    fileId: string | null;
+    fileName: string;
+  }>({
+    isOpen: false,
+    fileId: null,
+    fileName: ''
+  });
 
   // Load admin validation rules on component mount
   useEffect(() => {
@@ -158,6 +172,40 @@ export default function TaskFileUpload({
       setShowPreviewModal(true);
     } catch (error) {
 }
+  };
+
+  const handleDeleteFile = (file: TaskFile) => {
+    setDeleteConfirmModal({
+      isOpen: true,
+      fileId: file.id,
+      fileName: file.originalName
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { fileId } = deleteConfirmModal;
+    if (!fileId) return;
+
+    try {
+      await deleteTaskFile(userId, fileId);
+
+      // Notify parent component about the deletion
+      if (onFileDelete) {
+        onFileDelete(fileId);
+      }
+
+      // Close the confirmation modal
+      setDeleteConfirmModal({ isOpen: false, fileId: null, fileName: '' });
+
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+      // Close the modal even on error
+      setDeleteConfirmModal({ isOpen: false, fileId: null, fileName: '' });
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmModal({ isOpen: false, fileId: null, fileName: '' });
   };
 
   const getFileIcon = (filename: string) => {
@@ -380,6 +428,19 @@ export default function TaskFileUpload({
                 >
                   <Download size={14} style={{ color: 'var(--ok)' }} />
                 </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleDeleteFile(file);
+                  }}
+                  className="btn ghost"
+                  style={{ padding: '4px', borderRadius: '4px' }}
+                  title="Delete file"
+                >
+                  <Trash2 size={14} style={{ color: 'var(--danger)' }} />
+                </button>
               </div>
             </div>
           ))}
@@ -412,6 +473,18 @@ export default function TaskFileUpload({
           setPreviewFile(null);
         }}
         file={previewFile}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirmModal.isOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Task File"
+        message={`Are you sure you want to delete "${deleteConfirmModal.fileName}" from this task? This action cannot be undone and will permanently remove the file.`}
+        confirmText="Delete File"
+        cancelText="Cancel"
+        variant="danger"
       />
     </div>
   );
