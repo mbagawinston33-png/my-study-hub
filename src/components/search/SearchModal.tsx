@@ -11,15 +11,17 @@ interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  initialQuery?: string;
 }
 
 export default function SearchModal({
   isOpen,
   onClose,
-  userId
+  userId,
+  initialQuery = ''
 }: SearchModalProps) {
   const [searchState, setSearchState] = useState<SearchState>({
-    query: '',
+    query: initialQuery,
     results: [],
     filters: { types: ['task', 'subject', 'reminder', 'file'] },
     isLoading: false,

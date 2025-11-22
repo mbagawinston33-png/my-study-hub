@@ -31,9 +31,9 @@ export default function SearchResults({
   const router = useRouter();
 
   const handleResultClick = (result: SearchResult) => {
+    // Call cleanup callback if provided
     if (onResultClick) {
       onResultClick(result);
-      return;
     }
 
     // Navigate based on result type
@@ -306,7 +306,7 @@ export default function SearchResults({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
       {results.map((result) => {
         const Icon = getTypeIcon(result.type);
         const typeColor = getTypeColor(result.type);
@@ -316,23 +316,27 @@ export default function SearchResults({
             key={`${result.type}-${result.id}`}
             className="card"
             style={{
-              padding: '12px 16px',
+              padding: '16px 20px',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              borderLeft: `3px solid ${typeColor}`,
-              position: 'relative'
+              borderLeft: `4px solid ${typeColor}`,
+              position: 'relative',
+              borderRadius: '8px',
+              margin: '4px 8px'
             }}
             onClick={() => handleResultClick(result)}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--hover)';
               e.currentTarget.style.transform = 'translateX(2px)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--card)';
               e.currentTarget.style.transform = 'translateX(0)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
             }}
           >
-            <div className="row" style={{ gap: '12px', alignItems: 'flex-start' }}>
+            <div className="row" style={{ gap: '16px', alignItems: 'flex-start' }}>
               {/* Icon */}
               <div style={{
                 width: '32px',
@@ -353,9 +357,9 @@ export default function SearchResults({
               <div style={{ flex: 1, minWidth: 0 }}>
                 {/* Title and Type Badge */}
                 <div className="row" style={{
-                  gap: '8px',
+                  gap: '10px',
                   alignItems: 'center',
-                  marginBottom: '4px',
+                  marginBottom: '8px',
                   flexWrap: 'wrap'
                 }}>
                   <h4 style={{
@@ -376,10 +380,10 @@ export default function SearchResults({
                 {/* Description */}
                 {result.description && (
                   <p style={{
-                    margin: '0 0 8px 0',
+                    margin: '0 0 12px 0',
                     fontSize: '13px',
                     color: 'var(--text-2)',
-                    lineHeight: '1.4',
+                    lineHeight: '1.5',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
@@ -390,16 +394,16 @@ export default function SearchResults({
                 )}
 
                 {/* Metadata */}
-                <div className="row" style={{ gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div className="row" style={{ gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                   {getMetadata(result)}
                 </div>
 
                 {/* Breadcrumb */}
                 {result.breadcrumbs && result.breadcrumbs.length > 1 && (
                   <div className="row" style={{
-                    gap: '4px',
+                    gap: '6px',
                     alignItems: 'center',
-                    marginTop: '6px',
+                    marginTop: '10px',
                     fontSize: '11px',
                     color: 'var(--text-3)'
                   }}>
