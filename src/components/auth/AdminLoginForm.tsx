@@ -162,7 +162,7 @@ export default function AdminLoginForm() {
               href="/login"
               className="text-xs text-blue-600 hover:text-blue-500 mt-2 inline-block"
             >
-              ← Back to user login
+              ← Back to unified login page
             </a>
           </div>
         </form>

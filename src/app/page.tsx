@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import Image from "next/image";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -37,7 +38,13 @@ export default function Home() {
         <div className="container">
           <div className="row">
             <div className="row" style={{ gap: '12px' }}>
-              <div className="logo" aria-hidden="true"></div>
+              <Image
+                src="/logo.png"
+                alt="MyStudyHub Logo"
+                width={60}
+                height={60}
+                style={{ borderRadius: '16px' }}
+              />
               <div>
                 <b style={{ fontSize: '18px', letterSpacing: '0.2px', color: 'var(--text)' }}>MyStudyHub</b>
                 <div className="small" style={{ color: 'var(--text-2)' }}>Academic Task Organizer • Integrated Learning System</div>
@@ -111,13 +118,7 @@ export default function Home() {
                 Visualize your academic schedule with integrated calendar functionality.
               </p>
             </div>
-            <div className="card" style={{ padding: '24px' }}>
-              <h3 style={{ fontSize: 'var(--fs-h3)', margin: '0 0 12px', color: 'var(--text)', fontWeight: '600' }}>Email Notifications</h3>
-              <p style={{ lineHeight: '1.6', color: 'var(--text-2)' }}>
-                Stay informed with automatic email notifications for upcoming deadlines.
-              </p>
             </div>
-          </div>
         </div>
 
         {/* Dashboard Preview Section */}
