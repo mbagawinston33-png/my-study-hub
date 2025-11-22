@@ -10,6 +10,7 @@ export default function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -29,6 +30,15 @@ export default function RegisterForm() {
       return;
     }
 
+    // Validate phone number if provided
+    if (phoneNumber && phoneNumber.trim()) {
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+      if (!phoneRegex.test(phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
+        setError("Please enter a valid phone number");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -37,6 +47,7 @@ export default function RegisterForm() {
         password,
         confirmPassword,
         fullName,
+        phoneNumber: phoneNumber.trim() || undefined,
         role: "student"
       });
 
@@ -107,6 +118,20 @@ export default function RegisterForm() {
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                Phone Number (Optional)
+              </label>
+              <input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="+60 12-3456 7890"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
               />
             </div>
             <div>

@@ -12,6 +12,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -21,6 +22,7 @@ export default function ProfilePage() {
     if (user) {
       setName(user.displayName || "");
       setEmail(user.email || "");
+      setPhoneNumber(user.phoneNumber || "");
     }
   }, [user]);
 
@@ -32,9 +34,20 @@ export default function ProfilePage() {
 
     try {
       if (user) {
-        const success = await updateUserProfile(user.userId, {
-          displayName: name,
-        });
+        // Validate phone number if provided
+      if (phoneNumber && phoneNumber.trim()) {
+        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+        if (!phoneRegex.test(phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
+          setError("Please enter a valid phone number");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const success = await updateUserProfile(user.userId, {
+        displayName: name,
+        phoneNumber: phoneNumber.trim() || null,
+      });
 
         if (success) {
           await refreshUser();
@@ -93,6 +106,24 @@ export default function ProfilePage() {
           </div>
 
           <div>
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+              Phone Number
+            </label>
+            <input
+              id="phoneNumber"
+              name="phoneNumber"
+              type="tel"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="+60 12-3456 7890"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              Optional: Add your phone number for contact purposes.
+            </p>
+          </div>
+
+          <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email Address
             </label>
@@ -135,6 +166,10 @@ export default function ProfilePage() {
             <div className="flex justify-between">
               <span className="text-gray-500">Account Status:</span>
               <span className="text-gray-900 capitalize">{user?.accountStatus}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Phone Number:</span>
+              <span className="text-gray-900">{user?.phoneNumber || "Not provided"}</span>
             </div>
             {user?.studentId && (
               <div className="flex justify-between">

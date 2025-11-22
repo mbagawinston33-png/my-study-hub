@@ -84,11 +84,11 @@ export async function registerUser(formData: RegistrationFormData): Promise<Regi
       accountStatus: 'active',
       lastLogin: null,
       createdAt: serverTimestamp() as Timestamp,
-      updatedAt: serverTimestamp() as Timestamp
+      updatedAt: serverTimestamp() as Timestamp,
+      phoneNumber: formData.phoneNumber
     };
 
-    // Since we're defaulting all users to students with no additional fields,
-    // no role-specific fields are needed for now
+    // Save user data including optional fields like phone number
 
     // Save to Firestore
     await setDoc(doc(getDb(), 'users', userCredential.user.uid), userData);
