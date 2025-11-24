@@ -15,6 +15,7 @@ export interface Subject {
   room?: string;
   schedule?: SubjectSchedule[];
   isActive: boolean;
+  fileCount?: number; // Optional field to track attached files
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -34,6 +35,7 @@ export interface CreateSubjectFormData {
   color: string;
   teacher?: string;
   room?: string;
+  selectedFiles?: File[]; // Files to be uploaded during subject creation
 }
 
 export interface UpdateSubjectFormData extends Partial<CreateSubjectFormData> {

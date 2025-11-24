@@ -3,31 +3,29 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { SUBJECT_COLORS } from "@/types/subject";
-import { ArrowLeft, Save, X, Palette } from "lucide-react";
+import { SUBJECT_COLORS, CreateSubjectFormData } from "@/types/subject";
+import { ArrowLeft, Save, X, Palette, Upload } from "lucide-react";
 import { handleAutoCapitalize } from "@/lib/stringUtils";
+import SubjectFileUpload from "@/components/subject/SubjectFileUpload";
+import { uploadSubjectFiles, updateSubjectFileCount } from "@/lib/subjectFiles";
 
 export default function NewSubjectPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [formData, setFormData] = useState<{
-    name: string;
-    code: string;
-    description: string;
-    color: string;
-    teacher: string;
-    room: string;
-  }>({
+  const [formData, setFormData] = useState<CreateSubjectFormData>({
     name: "",
     code: "",
     description: "",
     color: SUBJECT_COLORS[0],
     teacher: "",
     room: "",
+    selectedFiles: [],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateForm = () => {
@@ -59,13 +57,15 @@ export default function NewSubjectPage() {
     }
 
     setIsSubmitting(true);
+    setIsUploadingFiles(true);
+    setUploadProgress(0);
 
     try {
       // Import Firebase functions
       const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
       const { getDb } = await import('@/lib/firebase');
 
-      // Create subject object
+      // Step 1: Create subject first
       const newSubject = {
         userId: user?.userId,
         name: formData.name,
@@ -75,26 +75,54 @@ export default function NewSubjectPage() {
         teacher: formData.teacher,
         room: formData.room,
         isActive: true,
+        fileCount: 0, // Initialize with 0, will be updated if files are uploaded
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
       // Save to Firebase Firestore
       const db = getDb();
-      const subjectRef = doc(db, 'subjects', Date.now().toString());
+      const subjectId = Date.now().toString();
+      const subjectRef = doc(db, 'subjects', subjectId);
       await setDoc(subjectRef, newSubject);
 
-      
+      // Step 2: Upload files if any were selected
+      if (formData.selectedFiles && formData.selectedFiles.length > 0) {
+        try {
+          const uploadedFiles = await uploadSubjectFiles(
+            formData.selectedFiles,
+            subjectId,
+            user?.userId || '',
+            (progress) => {
+              setUploadProgress(progress);
+            }
+          );
+
+          // Step 3: Update subject with file count
+          await updateSubjectFileCount(subjectId);
+
+        } catch (fileError) {
+          console.error('Failed to upload files:', fileError);
+          // Don't fail the entire subject creation if file upload fails
+          // Subject is already created, just log the error
+        }
+      }
+
       // Simulate API delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (uploadProgress < 100) {
+        await new Promise(resolve => setTimeout(resolve, 1000 - uploadProgress * 10));
+      }
 
       // Redirect to subjects list
       router.push("/dashboard/subjects");
 
     } catch (error) {
-setErrors({ submit: "Failed to create subject. Please try again." });
+      console.error('Subject creation error:', error);
+      setErrors({ submit: "Failed to create subject. Please try again." });
     } finally {
       setIsSubmitting(false);
+      setIsUploadingFiles(false);
+      setUploadProgress(0);
     }
   };
 
@@ -117,6 +145,10 @@ setErrors({ submit: "Failed to create subject. Please try again." });
 
   const handleColorSelect = (color: string) => {
     setFormData(prev => ({ ...prev, color }));
+  };
+
+  const handleFilesChange = (files: File[]) => {
+    setFormData(prev => ({ ...prev, selectedFiles: files }));
   };
 
   return (
@@ -310,6 +342,58 @@ setErrors({ submit: "Failed to create subject. Please try again." });
               </div>
             </div>
 
+            {/* Subject Files */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '12px', fontWeight: '500', color: 'var(--text)' }}>
+                <Upload size={16} style={{ display: 'inline-block', marginRight: '6px' }} />
+                Subject Files (Optional)
+              </label>
+              <div style={{ fontSize: '13px', color: 'var(--text-2)', marginBottom: '12px' }}>
+                Upload initial materials for this subject (syllabus, notes, references, etc.)
+              </div>
+              <SubjectFileUpload
+                userId={user?.userId || ''}
+                onFilesChange={handleFilesChange}
+                maxFiles={10}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* Upload Progress */}
+            {isUploadingFiles && uploadProgress > 0 && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                padding: '16px',
+                background: 'var(--brand-50)',
+                border: '1px solid var(--brand-200)',
+                borderRadius: '8px'
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--brand)' }}>
+                  Uploading subject files...
+                </div>
+                <div style={{
+                  width: '100%',
+                  height: '8px',
+                  background: 'var(--brand-100)',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${uploadProgress}%`,
+                    height: '100%',
+                    background: 'var(--brand)',
+                    borderRadius: '4px',
+                    transition: 'width 0.3s ease'
+                  }} />
+                </div>
+                <div className="small" style={{ color: 'var(--brand)' }}>
+                  {uploadProgress.toFixed(1)}% complete
+                </div>
+              </div>
+            )}
+
             {/* Preview */}
             <div>
               <label style={{ display: 'block', marginBottom: '12px', fontWeight: '500', color: 'var(--text)' }}>
@@ -365,17 +449,17 @@ setErrors({ submit: "Failed to create subject. Please try again." });
                 type="button"
                 onClick={() => router.back()}
                 className="btn ghost"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isUploadingFiles}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="btn"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isUploadingFiles}
                 style={{ minWidth: '120px' }}
               >
-                {isSubmitting ? (
+                {isUploadingFiles ? (
                   <>
                     <div style={{
                       width: '16px',
@@ -386,7 +470,20 @@ setErrors({ submit: "Failed to create subject. Please try again." });
                       animation: 'spin 1s linear infinite',
                       marginRight: '8px'
                     }} />
-                    Creating...
+                    Uploading Files...
+                  </>
+                ) : isSubmitting ? (
+                  <>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid white',
+                      borderTop: '2px solid transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                      marginRight: '8px'
+                    }} />
+                    Creating Subject...
                   </>
                 ) : (
                   <>

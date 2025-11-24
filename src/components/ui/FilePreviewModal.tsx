@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Modal from "./Modal";
-import { TaskFile } from "@/types/task";
 import {
   Download,
   ExternalLink,
@@ -12,10 +11,23 @@ import {
   File
 } from "lucide-react";
 
+// Generic file interface that works with both TaskFile and SubjectFile
+interface BaseFile {
+  id: string;
+  userId: string;
+  name: string;
+  originalName: string;
+  type: string;
+  size: number;
+  url: string;
+  storagePath: string;
+  uploadedAt: any; // Firebase Timestamp
+}
+
 interface FilePreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  file: TaskFile | null;
+  file: BaseFile | null;
 }
 
 export default function FilePreviewModal({
@@ -39,7 +51,7 @@ export default function FilePreviewModal({
     return <File size={24} />;
   };
 
-  const isPreviewable = (file: TaskFile): boolean => {
+  const isPreviewable = (file: BaseFile): boolean => {
     const extension = file.originalName.split('.').pop()?.toLowerCase();
     const previewableTypes = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'txt', 'md', 'json', 'xml', 'csv'];
     return previewableTypes.includes(extension || '');
@@ -84,7 +96,7 @@ export default function FilePreviewModal({
     return extension?.toUpperCase() || 'FILE';
   };
 
-  const renderFilePreview = (file: TaskFile) => {
+  const renderFilePreview = (file: BaseFile) => {
     const extension = file.originalName.split('.').pop()?.toLowerCase();
     
     switch (extension) {
